@@ -141,6 +141,7 @@ def doit(cipher):
     running_offset = 0            # alphabet offset at the current point in the cipher
     start_offset = running_offset # first offset we tried before moving on to others
     key_offset = 0                # offset to store in the key for the given code word
+    previous_word = None
 
     i = 0
     while i < len(cipher):
@@ -153,19 +154,35 @@ def doit(cipher):
         key_ok = True
 
         if cipher_word in key:
+            (ch, of) = key[cipher_word]
+
             # key collision: key[n] already set to something other than what we are trying to assign
-            if key[cipher_word][0] != key_char:
-                print("key collision for '%s': %s != %s" % (cipher_word, key_char, key[cipher_word][0]))
+            if ch != key_char:
+                print("key collision for '%s': %s != %s" % (cipher_word, key_char, ch))
                 key_ok = False
+            elif of != None:
+                print("check offset for %s" % cipher_word)
+
+        elif key_char in [a for (a,x) in key.values()]:
+            # duplicate key_val: key[a] and key[b] both map to the same letter
+            print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, running_offset))
+            print("key:",key)
+            key_ok = False
 
         else:
-            # duplicate key_val: key[a] and key[b] both map to the same letter
-            if key_char in [a for (a,x) in key.values()]:
-                print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, running_offset))
-                print("key:",key)
-                key_ok = False
+            # Key looks good & is not currently in the dictionary, so add it
+            key[cipher_word] = (key_char, None)    # We won't know the offset until the next iteration
 
-        if key_ok == False:
+            print("key so far:", key)
+
+        if key_ok == True:
+            # Assign the rotation offset for the previous word, if needed
+            if previous_word in key:
+                (ch, of) = key[previous_word]
+                if of == None:
+                    print("Assign offset for %s to %d (running_offset %d start_offset %d)" % (previous_word, key_offset, running_offset, start_offset))
+                    key[previous_word] = (ch, key_offset)
+        else:
             running_offset = (running_offset + 1) % 26
             if running_offset == start_offset:
 
@@ -175,11 +192,9 @@ def doit(cipher):
             continue
 
         offsets.append(running_offset)
-        # Probably eventually want keys to be tuples of (character, rotation_val)
-        key[cipher_word] = (key_char, None)
-        print("key so far:    ",key)
         print("offsets so far:",offsets)
         start_offset = running_offset
+        previous_word = cipher_word
 
         i += 1
 """
