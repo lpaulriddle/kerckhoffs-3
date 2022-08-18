@@ -40,100 +40,7 @@ print("cipher_list", cipher_list)
 #
 assert(cipher_text == ''.join(cipher_list))
 
-def apply_rotations(rot_list):
-    global cipher_words, cipher_list
-
-    rotdict = dict(zip(cipher_words, rot_list))
-    print(rotdict)
-    o = 0
-    newcip = []
-    for word in cipher_list:
-        newcip.append((word, o))
-        o = (o + rotdict[word]) % 26
-    return(newcip)
-
-def try_letter(cipher, ltr, test_code_word, cipher_pos, decip_list, key): 
-    offset = cipher[cipher_pos][1]
-    #print("offset",offset)
-
-    key_letter = chr((ord(ltr) - ord('a') - offset) % 26 + ord('a'))
-    if test_code_word in key:
-        if key[test_code_word] != key_letter:
-            raise Exception("Key collision for key %s" % test_code_word)
-    else:
-        if key_letter in key.values():
-            raise Exception("Duplicate key value %s" % key_letter)
-    key[test_code_word] = key_letter
-
-    i = 0
-    for (code_word, pos) in cipher:
-        if code_word == test_code_word:
-            #print('code', code_word, 'pos', pos)
-            decip_list[i] = chr((ord(ltr) - ord('a') + pos - offset) % 26 + ord('a'))
-        i += 1   
-
-def try_word(cipher, word, pos, decip_list, key):    
-    for ltr in word:
-        try_letter(cipher, ltr, cipher[pos][0], pos, decip_list, key)
-        pos += 1
-
-def fit_word(cipher, word):  
-    for i in range(len(cipher) - len(word) + 1):
-        key = {}
-        text = ['.'] * len(cipher)
-    
-        try:
-            try_word(cipher, word, i, text, key)
-            print(''.join(text))
-        except:
-            print("No fit at position %d" % i)
-            pass
-
-try_rotations = random.sample(range(26), 26)
-
-cipher = apply_rotations(try_rotations)
-print(cipher)
-text = ['.'] * len(cipher)
-#key = {}
-#try_letter(cipher, 'a', '243255912', 0, text, key)
-#try_word(cipher, 'norththirtyninedegreestenpoint', 0, text, key)
-#fit_word(cipher, 'norththirtyninedegreestenpoint')
-#print(''.join(text))
-#print(key)
-
 print(cipher_list)
-pt = list('congratulationsyou')    # Plaintext to try
-sl = cipher_list[:len(pt)]         # Slice of cipher to work with (for now)
-thing = list(zip(sl, pt))
-
-
-# Remember: computing absolute rotation positions here - need to subesequently be pulled out
-# re-applied to individual key elements
-
-"""
-pos = {cipher_list[0] : (pt[0], 0)}          # absolute rotation for each position in cipher - starts at 0
-key[cipher_list[0]] = (pt[0], 0)
-for offset in range(26):
-    pos[cipher_list[1]] = [chr((ord(pt[1]) - ord('a') + offset) % 26 + ord('a')), offset]   # once we loop this, offset will need to be cumulative
-    new_char = chr((ord(pt[1]) - ord('a') + offset) % 26 + ord('a'))
-
-    # need to detect:
-    # key collision: key[n] already set to something other than what we are trying to assign
-    if (cipher_list[1] in key) and key[cipher_list[1]] != (new_char, offset):
-        print("key collision for '%s' " % cipher_list[1])
-        continue
-
-    # duplicate key_val: key[a] and key[b] both map to the same letter
-    if new_char in [a for (a,x) in key.values()]:
-        print("duplicate key_val %c (orig %c offset %d)" % (new_char, pt[1], offset))
-        continue
-
-    # redundant if it's already there - rework logic since we're testing for it above
-    key[cipher_list[1]] = (new_char, offset)
-    print("key:",key)
-
-    del key[cipher_list[1]]
-"""    
 
 def doit(cipher):
     offsets = []
@@ -197,20 +104,7 @@ def doit(cipher):
         previous_word = cipher_word
 
         i += 1
-"""
-    # Plug the running offset into the cipher
-    cipher[0] = (word, offset)
 
-
-    print("set %s to (%c, %d)" % (word, key_char, offset))
-    key[word] = (key_char, offset)
-    # iterate to the next letter/cipher word
-    if doit(cipher[1:], plaintext[1:], offset) == True:
-        print("key", key)
-    # Iterate over all possible offsets (be sure to clear key)
-    del key[word]
-    return doit(cipher, plaintext, offset + 1)
-"""
 # Initialize position offsets to zero and create a list of tuples
 cipher = list(zip(cipher_list, 'congratulationsyou'))
 doit(cipher)
