@@ -152,17 +152,18 @@ def doit(cipher):
 
         key_ok = True
 
-        # key collision: key[n] already set to something other than what we are trying to assign
-        if (cipher_word in key) and key[cipher_word][0] != key_char:
-            print("key collision for '%s': %s != %s" % (cipher_word, key_char, key[cipher_word][0]))
-            key_ok = False
+        if cipher_word in key:
+            # key collision: key[n] already set to something other than what we are trying to assign
+            if key[cipher_word][0] != key_char:
+                print("key collision for '%s': %s != %s" % (cipher_word, key_char, key[cipher_word][0]))
+                key_ok = False
 
-        # duplicate key_val: key[a] and key[b] both map to the same letter
-        #if key_char in [a for (a,x) in key.values()]:
-        elif key_char in key.values() and (cipher_word not in key):
-            print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, running_offset))
-            print("key:",key)
-            key_ok = False
+        else:
+            # duplicate key_val: key[a] and key[b] both map to the same letter
+            if key_char in [a for (a,x) in key.values()]:
+                print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, running_offset))
+                print("key:",key)
+                key_ok = False
 
         if key_ok == False:
             running_offset = (running_offset + 1) % 26
