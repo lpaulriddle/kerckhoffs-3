@@ -151,10 +151,10 @@ def doit(cipher):
         print("word %s cur_char %c key_char %c running_offset %d key_offset %d" % (cipher_word, plaintext_char, key_char, running_offset, key_offset))
 
         key_ok = True
+
         # key collision: key[n] already set to something other than what we are trying to assign
-        
-        if (cipher_word in key) and key[cipher_word] != key_char:
-            print("key collision for '%s': %s != %s" % (cipher_word, key_char, key[cipher_word]))
+        if (cipher_word in key) and key[cipher_word][0] != key_char:
+            print("key collision for '%s': %s != %s" % (cipher_word, key_char, key[cipher_word][0]))
             key_ok = False
 
         # duplicate key_val: key[a] and key[b] both map to the same letter
@@ -175,7 +175,7 @@ def doit(cipher):
 
         offsets.append(running_offset)
         # Probably eventually want keys to be tuples of (character, rotation_val)
-        key[cipher_word] = key_char
+        key[cipher_word] = (key_char, None)
         print("key so far:    ",key)
         print("offsets so far:",offsets)
         start_offset = running_offset
