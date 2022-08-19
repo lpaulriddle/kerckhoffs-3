@@ -67,8 +67,9 @@ def doit(cipher):
             if ch != key_char:
                 print("key collision for '%s': %s != %s" % (cipher_word, key_char, ch))
                 key_ok = False
-            elif of != None:
-                print("check offset for %s" % cipher_word)
+            elif of != None and of != key_offset:
+                print("offset mismatch for '%s': %d != %d" % (cipher_word, of, key_offset))
+                key_ok = False
 
         elif key_char in [a for (a,x) in key.values()]:
             # duplicate key_val: key[a] and key[b] both map to the same letter
