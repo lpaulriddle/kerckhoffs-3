@@ -83,7 +83,7 @@ def doit(cipher):
 
             print("key so far:", key)
 
-        if key_ok == True:
+        if key_ok:
             # Assign the rotation offset for the previous word, if needed
             if previous_word in key:
                 (ch, of) = key[previous_word]
@@ -91,6 +91,8 @@ def doit(cipher):
                     print("Assign offset for %s to %d (running_offset %d start_offset %d)" % (previous_word, key_offset, running_offset, start_offset))
                     key[previous_word] = (ch, key_offset)
         else:
+            # Should be able to optimize this in cases where the key is already set and we can calculate
+            # what the offset would have to be to fit a specific letter
             running_offset = (running_offset + 1) % 26
             if running_offset == start_offset:
 
