@@ -71,7 +71,13 @@ def doit(cipher):
             if ch != key_char:
                 print("key collision for '%s': %s != %s" % (cipher_word, key_char, ch))
                 key_ok = False
-            elif of != None and of != key_offset:
+            elif of == None:
+                # optimization for the case where we have two consecutive identical code words, which (I
+                # think) is the only time the key can exist with a null offset at this point. In that case,
+                # the offset has to be whatever difference "fits" the two consecutive plaintext characters
+                print("Consecutive word found - assign offset for %s to %d" % (cipher_word, key_offset))
+                key[cipher_word] = (ch, key_offset)
+            elif of != key_offset:
                 print("offset mismatch for '%s': %d != %d" % (cipher_word, of, key_offset))
                 key_ok = False
 
