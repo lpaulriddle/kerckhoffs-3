@@ -104,7 +104,9 @@ def doit(cipher):
                 if i < 0:
                     print("Could not find a fit... giving up")
                     break
-                d = state.pop()
+                # discard the most recent state and restore the last known "good" state
+                state.pop()
+                d = state[-1]
                 running_offset = d['running_offset']
                 start_offset = d['start_offset']
                 previous_word = d['previous_word']
@@ -115,6 +117,7 @@ def doit(cipher):
                     break
             continue
 
+        # falling through here implies that key_ok == True
         state.append({'running_offset': running_offset,
                       'start_offset': start_offset,
                       'previous_word': previous_word,
