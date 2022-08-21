@@ -40,10 +40,8 @@ print("cipher_list", cipher_list)
 #
 assert(cipher_text == ''.join(cipher_list))
 
-print(cipher_list)
-
 def doit(cipher):
-    offsets = []
+    state = []
     key = {}
     running_offset = 0            # alphabet offset at the current point in the cipher
     start_offset = running_offset # first offset we tried before moving on to others
@@ -51,12 +49,18 @@ def doit(cipher):
     previous_word = None
 
     i = 0
+    loop_count = 0   # temp so we can break out of infinite loops
+
+    #
+    # Variables to save with state (anything not explicitly set/assigned at start of while loop):
+    # running_offset, start_offset, key, previous_word
+    #
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') + running_offset) % 26 + ord('a'))
         key_offset = (running_offset - start_offset) % 26
 
-        print("word %s cur_char %c key_char %c running_offset %d key_offset %d" % (cipher_word, plaintext_char, key_char, running_offset, key_offset))
+        print("word %s cur_char %c key_char %c running_offset %d key_offset %d key" % (cipher_word, plaintext_char, key_char, running_offset, key_offset), key)
 
         key_ok = True
 
@@ -81,8 +85,6 @@ def doit(cipher):
             # Key looks good & is not currently in the dictionary, so add it
             key[cipher_word] = (key_char, None)    # We won't know the offset until the next iteration
 
-            print("key so far:", key)
-
         if key_ok:
             # Assign the rotation offset for the previous word, if needed
             if previous_word in key:
@@ -97,16 +99,33 @@ def doit(cipher):
             if running_offset == start_offset:
 
                 # We have run through all possible offsets for this character without a fit
-                print("**Exhausted all possible offsets**")
-                break
+                print("Exhausted all possible offsets at position %d- backtracking" % i)
+                i -= 1
+                if i < 0:
+                    print("Could not find a fit... giving up")
+                    break
+                d = state.pop()
+                running_offset = d['running_offset']
+                start_offset = d['start_offset']
+                previous_word = d['previous_word']
+                key = d['key']
+                loop_count += 1
+                if loop_count >= 10:
+                    print("Breaking loop")
+                    break
             continue
 
-        offsets.append(running_offset)
-        print("offsets so far:",offsets)
+        state.append({'running_offset': running_offset,
+                      'start_offset': start_offset,
+                      'previous_word': previous_word,
+                      'key': key.copy()})
+        print("current state:", state)
         start_offset = running_offset
         previous_word = cipher_word
 
         i += 1
+    print("Final value of i=%d" % i)
+    print("Final state:", state)
 
 # Initialize position offsets to zero and create a list of tuples
 cipher = list(zip(cipher_list, 'congratulationsyou'))
