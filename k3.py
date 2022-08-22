@@ -111,9 +111,14 @@ def doit(cipher):
             # Should be able to optimize this in cases where the key is already set and we can calculate
             # what the offset would have to be to fit a specific letter
             running_offset = (running_offset + 1) % 26
-            if running_offset == start_offset:
 
-                # We have run through all possible offsets for this character without a fit
+            #
+            # If these are equal after incrementing running_offset, it means we've run through all
+            # possible offsets for the current character without finding a fit
+            #
+            while running_offset == start_offset:
+
+                # Keep backtracking until we find a position with rotation offsets we haven't tried
                 print("Exhausted all possible offsets at position %d- backtracking" % i)
                 i -= 1
                 if i < 0:
@@ -121,7 +126,12 @@ def doit(cipher):
                     break
                 # discard the most recent state and restore the last known "good" state
                 d = state.pop()
-                running_offset = d['running_offset']
+
+                #
+                # Need to increment the offset we pull off the stack - otherwise it will test the previous
+                # value and get into an infinite loop
+                #
+                running_offset = (d['running_offset'] + 1) % 26
                 start_offset = d['start_offset']
                 previous_word = d['previous_word']
                 key = d['key']
@@ -129,6 +139,9 @@ def doit(cipher):
                 if loop_count >= 10:
                     print("Breaking loop")
                     break
+            else:
+                continue
+            break
 
     print("Final value of i=%d" % i)
     print("Final state:", state)
