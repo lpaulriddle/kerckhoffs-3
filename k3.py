@@ -98,6 +98,15 @@ def doit(cipher):
                 if of == None:
                     print("Assign offset for %s to %d (running_offset %d start_offset %d)" % (previous_word, key_offset, running_offset, start_offset))
                     key[previous_word] = (ch, key_offset)
+            state.append({'running_offset': running_offset,
+                      'start_offset': start_offset,
+                      'previous_word': previous_word,
+                      'key': key.copy()})
+            print("current state:", state)
+            start_offset = running_offset
+            previous_word = cipher_word
+            i += 1
+
         else:
             # Should be able to optimize this in cases where the key is already set and we can calculate
             # what the offset would have to be to fit a specific letter
@@ -120,18 +129,7 @@ def doit(cipher):
                 if loop_count >= 10:
                     print("Breaking loop")
                     break
-            continue
 
-        # falling through here implies that key_ok == True
-        state.append({'running_offset': running_offset,
-                      'start_offset': start_offset,
-                      'previous_word': previous_word,
-                      'key': key.copy()})
-        print("current state:", state)
-        start_offset = running_offset
-        previous_word = cipher_word
-
-        i += 1
     print("Final value of i=%d" % i)
     print("Final state:", state)
 
