@@ -111,8 +111,7 @@ def doit(cipher):
                     print("Could not find a fit... giving up")
                     break
                 # discard the most recent state and restore the last known "good" state
-                state.pop()
-                d = state[-1]
+                d = state.pop()
                 running_offset = d['running_offset']
                 start_offset = d['start_offset']
                 previous_word = d['previous_word']
