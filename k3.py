@@ -69,7 +69,11 @@ def decryptit(cipher_list, key):
 
 def doit(cipher):
     state = []
-    key = {}
+    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
+    for thing in key.keys():
+        ones = int(thing) % 10
+        key[thing] = (key[thing], ones)
+#    key = {}
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_offset = current_rotation # first offset we tried before moving on to others
     key_offset = 0                # offset to store in the key for the given code word
@@ -84,7 +88,7 @@ def doit(cipher):
     #
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
-        key_char = chr((ord(plaintext_char) - ord('a') + current_rotation) % 26 + ord('a'))
+        key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
         key_offset = (start_offset - current_rotation) % 26
 
         print("word %s cur_char %c key_char %c current_rotation %d key_offset %d key" % (cipher_word, plaintext_char, key_char, current_rotation, key_offset), key)
@@ -104,9 +108,12 @@ def doit(cipher):
                 # the offset has to be whatever difference "fits" the two consecutive plaintext characters
                 print("Consecutive word found - assign offset for %s to %d" % (cipher_word, key_offset))
                 key[cipher_word] = (ch, key_offset)
-            elif of != key_offset:
-                print("offset mismatch for '%s': %d != %d" % (cipher_word, of, key_offset))
-                key_ok = False
+            # This is not necessarily an error...
+            #elif of != key_offset:
+            #    print("offset mismatch for '%s': %d != %d" % (cipher_word, of, key_offset))
+            #    key_ok = False
+            else:
+                current_rotation = (current_rotation + of) % 26
 
         elif key_char in [a for (a,x) in key.values()]:
             # duplicate key_val: key[a] and key[b] both map to the same letter
