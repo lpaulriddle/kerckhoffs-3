@@ -85,7 +85,7 @@ def doit(cipher):
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') + running_offset) % 26 + ord('a'))
-        key_offset = (running_offset - start_offset) % 26
+        key_offset = (start_offset - running_offset) % 26
 
         print("word %s cur_char %c key_char %c running_offset %d key_offset %d key" % (cipher_word, plaintext_char, key_char, running_offset, key_offset), key)
 
