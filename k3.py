@@ -4,6 +4,19 @@
 # norththirtyninedegreestenpoint
 # westseventysixdegreesfiftyonepoint
 #
+# TODO:
+# - Find all workable solutions??
+# - Decryption routine - run after successful completion to check result for correctness
+# - Return success or failure (key or None)
+# - Manage output somehow - verbosity toggle, periodic checkpoint output, ctrl-c to show current state, etc
+#
+# Data structures, programming languages, algorithm design and analysis, cryptography
+# Program to find exactly 26 code words and split cipher into a list
+# Modified/extended version of part 2 algorithm would take thousands of years to complete
+# Backtracking - devil in the details
+# Tried recursion
+# Getting iteration correct without infinite loops
+# Python debugger
 
 import hashlib
 import random
@@ -39,6 +52,20 @@ print("cipher_list", cipher_list)
 # Make sure we have a match
 #
 assert(cipher_text == ''.join(cipher_list))
+
+def decryptit(cipher_list, key):
+    def rotate(l, n):
+        return l[n:] + l[:n]
+
+    plaintext = ""
+    for word in cipher_list:
+        if word in key:
+            print("gotWord", word, key[word])
+            plaintext += key[word][0]
+        else:
+            print("word", word, "not in key - finishing")
+            break
+    return plaintext
 
 def doit(cipher):
     state = []
@@ -155,10 +182,12 @@ def doit(cipher):
             break
 
     print("Final value of i=%d" % i)
-    print("Final state:", state)
+    print("Key:", key)
+    #print("Final state:", state)
+    return key
 
 # Initialize position offsets to zero and create a list of tuples
 #cipher = list(zip(cipher_list, 'congratulationsyou'))
-cipher = list(zip(cipher_list, 'congratul'))
-doit(cipher)
-print("cipher",cipher)
+cipher = list(zip(cipher_list, 'congratu'))
+key = doit(cipher)
+print(decryptit(cipher_list, key))
