@@ -69,11 +69,11 @@ def decryptit(cipher_list, key):
 
 def doit(cipher):
     state = []
-    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
-    for thing in key.keys():
-        ones = int(thing) % 10
-        key[thing] = (key[thing], ones)
-#    key = {}
+#    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
+#    for thing in key.keys():
+#        ones = int(thing) % 10
+#        key[thing] = (key[thing], ones)
+    key = {}
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_offset = current_rotation # first offset we tried before moving on to others
     key_offset = 0                # offset to store in the key for the given code word
@@ -89,7 +89,7 @@ def doit(cipher):
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
-        key_offset = (start_offset - current_rotation) % 26
+        key_offset = (current_rotation - start_offset) % 26
 
         print("word %s cur_char %c key_char %c current_rotation %d key_offset %d key" % (cipher_word, plaintext_char, key_char, current_rotation, key_offset), key)
 
