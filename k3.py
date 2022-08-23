@@ -135,8 +135,19 @@ def doit(cipher):
                 start_offset = d['start_offset']
                 previous_word = d['previous_word']
                 key = d['key']
+
+                #
+                # If the current word is present in the key with an unknown offset, remove it
+                # so we can "try" another value of the key
+                # Probably a better/more efficient way to do this...
+                #
+                if (cipher_list[i] in key):
+                    (l, o) = key[cipher_list[i]]
+                    if o == None:
+                        del key[cipher_list[i]]
+                
                 loop_count += 1
-                if loop_count >= 10:
+                if loop_count >= 10000:
                     print("Breaking loop")
                     break
             else:
@@ -147,6 +158,7 @@ def doit(cipher):
     print("Final state:", state)
 
 # Initialize position offsets to zero and create a list of tuples
-cipher = list(zip(cipher_list, 'congratulationsyou'))
+#cipher = list(zip(cipher_list, 'congratulationsyou'))
+cipher = list(zip(cipher_list, 'congratul'))
 doit(cipher)
 print("cipher",cipher)
