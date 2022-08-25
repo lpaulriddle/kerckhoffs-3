@@ -81,6 +81,7 @@ def doit(cipher):
 
     i = 0
     loop_count = 0   # temp so we can break out of infinite loops
+    key_rotation_error = 0
 
     #
     # Variables to save with state (anything not explicitly set/assigned at start of while loop):
@@ -93,45 +94,49 @@ def doit(cipher):
 
         print("word %s cur_char %c key_char %c current_rotation %d key_offset %d key" % (cipher_word, plaintext_char, key_char, current_rotation, key_offset), key)
 
-        key_ok = True
-
         if cipher_word in key:
             (ch, of) = key[cipher_word]
 
             # key collision: key[n] already set to something other than what we are trying to assign
             if ch != key_char:
-                print("key collision for '%s': %s != %s" % (cipher_word, key_char, ch))
-                key_ok = False
-            elif of == None:
-                # optimization for the case where we have two consecutive identical code words, which (I
-                # think) is the only time the key can exist with a null offset at this point. In that case,
-                # the offset has to be whatever difference "fits" the two consecutive plaintext characters
-                print("Consecutive word found - assign offset for %s to %d" % (cipher_word, key_offset))
-                key[cipher_word] = (ch, key_offset)
-            # This is not necessarily an error...
-            #elif of != key_offset:
-            #    print("offset mismatch for '%s': %d != %d" % (cipher_word, of, key_offset))
-            #    key_ok = False
-            else:
+                key_rotation_error = (ord(key_char) - ord(ch)) % 26
+                print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, key_rotation_error))
+
+            elif key_rotation_error > 0:
+                print("Last iteration was key collision")
+                if of == None:
+                    print("Assign initial rotation offset for %s to %d" % (cipher_word, key_rotation_error))
+                    of = key_rotation_error
+                    key[cipher_word] = (ch, of)
+                    key_rotation_error = 0
+                else:
+                    print("key rotation error with existing rotation offset in key - TBD")
+                    break
+
+            if (of != None) and (key_rotation_error == 0):
                 current_rotation = (current_rotation + of) % 26
 
+        #
+        # This case is not yet handled...
+        #
         elif key_char in [a for (a,x) in key.values()]:
             # duplicate key_val: key[a] and key[b] both map to the same letter
             print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
             print("key:",key)
-            key_ok = False
+            key_rotation_error = 0   # ??
 
         else:
-            # Key looks good & is not currently in the dictionary, so add it
-            key[cipher_word] = (key_char, None)    # We won't know the offset until the next iteration
+            # Key looks good & is not currently in the dictionary, so add it with a starting rotation
+            # offset of None (it will be set later on as the algorithm runs, in theory)
+            key[cipher_word] = (key_char, None)
 
-        if key_ok:
+        if key_rotation_error == 0:
             # Assign the rotation offset for the previous word, if needed
-            if previous_word in key:
-                (ch, of) = key[previous_word]
-                if of == None:
-                    print("Assign offset for %s to %d (current_rotation %d start_rotation %d)" % (previous_word, key_offset, current_rotation, start_rotation))
-                    key[previous_word] = (ch, key_offset)
+            #if previous_word in key:
+            #    (ch, of) = key[previous_word]
+            #    if of == None:
+            #        print("Assign offset for %s to %d (current_rotation %d start_rotation %d)" % (previous_word, key_offset, current_rotation, start_rotation))
+            #        key[previous_word] = (ch, key_offset)
             state.append({'current_rotation': current_rotation,
                       'start_rotation': start_rotation,
                       'previous_word': previous_word,
@@ -142,51 +147,23 @@ def doit(cipher):
             i += 1
 
         else:
-            # Should be able to optimize this in cases where the key is already set and we can calculate
-            # what the offset would have to be to fit a specific letter
-            current_rotation = (current_rotation + 1) % 26
+            print("Backtracking")
+            i -= 1
+            if i < 0:
+                print("Could not find a fit... giving up")
+                break
 
-            #
-            # If these are equal after incrementing current_rotation, it means we've run through all
-            # possible offsets for the current character without finding a fit
-            #
-            while current_rotation == start_rotation:
+            # restore the previous state
+            d = state.pop()
+            current_rotation = d['current_rotation']
+            start_rotation = d['start_rotation']
+            previous_word = d['previous_word']
+            key = d['key']
 
-                # Keep backtracking until we find a position with rotation offsets we haven't tried
-                print("Exhausted all possible offsets at position %d- backtracking" % i)
-                i -= 1
-                if i < 0:
-                    print("Could not find a fit... giving up")
-                    break
-                # discard the most recent state and restore the last known "good" state
-                d = state.pop()
-
-                #
-                # Need to increment the offset we pull off the stack - otherwise it will test the previous
-                # value and get into an infinite loop
-                #
-                current_rotation = (d['current_rotation'] + 1) % 26
-                start_rotation = d['start_rotation']
-                previous_word = d['previous_word']
-                key = d['key']
-
-                #
-                # If the current word is present in the key with an unknown offset, remove it
-                # so we can "try" another value of the key
-                # Probably a better/more efficient way to do this...
-                #
-                if (cipher_list[i] in key):
-                    (l, o) = key[cipher_list[i]]
-                    if o == None:
-                        del key[cipher_list[i]]
-                
-                loop_count += 1
-                if loop_count >= 10000:
-                    print("Breaking loop")
-                    break
-            else:
-                continue
-            break
+            loop_count += 1
+            if loop_count >= 10000:
+                print("Breaking loop")
+                break
 
     print("Final value of i=%d" % i)
     print("Key:", key)
