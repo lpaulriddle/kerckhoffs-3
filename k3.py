@@ -53,15 +53,39 @@ print("cipher_list", cipher_list)
 #
 assert(cipher_text == ''.join(cipher_list))
 
+#
+# This is just ugly af, but seems to work...
+#
 def decryptit(cipher_list, key):
     def rotate(l, n):
-        return l[n:] + l[:n]
+        return l[-n:] + l[:-n]
 
+    #
+    # Build a list of keys indexed by alphabet letter
+    # So we can do proper rotation
+    #
+    def build_key_list(key):
+        key_list = [None] * 26
+        for i in key.keys():
+            (ltr, rot) = key[i]
+            key_list[ord(ltr) - ord('a')] = i
+        return key_list
+
+    def reassign_key_letters(key, key_list):
+        for a in range(len(key_list)):
+            foo = key_list[a]
+            if foo != None:
+                key[foo] = (chr(a + ord('a')), key[foo][1])
+
+    key_list = build_key_list(key)
     plaintext = ""
     for word in cipher_list:
         if word in key:
-            print("gotWord", word, key[word])
-            plaintext += key[word][0]
+            (ltr, rot) = key[word]
+            plaintext += ltr
+            if (rot != None) and (rot > 0):
+                key_list = rotate(key_list, rot)
+                reassign_key_letters(key, key_list)
         else:
             print("word", word, "not in key - finishing")
             break
@@ -175,4 +199,4 @@ def doit(cipher):
 cipher = list(zip(cipher_list, 'congratu'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
-#print(decryptit(cipher_list, key))
+print(decryptit(cipher_list, key))
