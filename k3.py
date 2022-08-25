@@ -100,7 +100,6 @@ def doit(cipher):
     key = {}
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
-    key_offset = 0                # offset to store in the key for the given code word
     previous_word = None
 
     i = 0
@@ -114,9 +113,8 @@ def doit(cipher):
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
-        key_offset = (current_rotation - start_rotation) % 26
 
-        print("word %s cur_char %c key_char %c current_rotation %d key_offset %d key" % (cipher_word, plaintext_char, key_char, current_rotation, key_offset), key)
+        print("word %s cur_char %c key_char %c current_rotation %d key" % (cipher_word, plaintext_char, key_char, current_rotation), key)
 
         if cipher_word in key:
             (ch, of) = key[cipher_word]
@@ -155,12 +153,6 @@ def doit(cipher):
             key[cipher_word] = (key_char, None)
 
         if key_rotation_error == 0:
-            # Assign the rotation offset for the previous word, if needed
-            #if previous_word in key:
-            #    (ch, of) = key[previous_word]
-            #    if of == None:
-            #        print("Assign offset for %s to %d (current_rotation %d start_rotation %d)" % (previous_word, key_offset, current_rotation, start_rotation))
-            #        key[previous_word] = (ch, key_offset)
             state.append({'current_rotation': current_rotation,
                       'start_rotation': start_rotation,
                       'previous_word': previous_word,
@@ -196,7 +188,8 @@ def doit(cipher):
 
 # Initialize position offsets to zero and create a list of tuples
 #cipher = list(zip(cipher_list, 'congratulationsyou'))
-cipher = list(zip(cipher_list, 'congratu'))
+cipher = list(zip(cipher_list, 'congratulatio'))
+#cipher = list(zip(cipher_list, 'congratula'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
