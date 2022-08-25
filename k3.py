@@ -171,8 +171,9 @@ def doit(cipher):
 
             # restore the previous state
             d = state.pop()
-            current_rotation = d['current_rotation']
+            #current_rotation = d['current_rotation']
             start_rotation = d['start_rotation']
+            current_rotation = start_rotation
             previous_word = d['previous_word']
             key = d['key']
 
