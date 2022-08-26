@@ -67,22 +67,21 @@ def decryptit(cipher_list, key):
     def build_key_list(key):
         key_list = [None] * 26
         for i in key.keys():
-            (ltr, rot) = key[i]
-            key_list[ord(ltr) - ord('a')] = i
+            key_list[ord(key[i]['root_char']) - ord('a')] = i
         return key_list
 
     def reassign_key_letters(key, key_list):
         for a in range(len(key_list)):
             foo = key_list[a]
             if foo != None:
-                key[foo] = (chr(a + ord('a')), key[foo][1])
+                key[foo]['root_char'] = chr(a + ord('a'))
 
     key_list = build_key_list(key)
     plaintext = ""
     for word in cipher_list:
         if word in key:
-            (ltr, rot) = key[word]
-            plaintext += ltr
+            rot = key[word]['rotation']
+            plaintext += key[word]['root_char']
             if (rot != None) and (rot > 0):
                 key_list = rotate(key_list, rot)
                 reassign_key_letters(key, key_list)
@@ -116,7 +115,9 @@ def doit(cipher):
         print("word %s cur_char %c key_char %c current_rotation %d key" % (cipher_word, plaintext_char, key_char, current_rotation), key)
 
         if cipher_word in key:
-            (ch, of) = key[cipher_word]
+            k = key[cipher_word]
+            ch = k['root_char']
+            of = k['rotation']
 
             # key collision: key[n] already set to something other than what we are trying to assign
             if ch != key_char:
@@ -128,7 +129,7 @@ def doit(cipher):
                 if of == None:
                     print("Assign initial rotation offset for %s to %d" % (cipher_word, key_rotation_error))
                     of = key_rotation_error
-                    key[cipher_word] = (ch, of)
+                    key[cipher_word] = {'root_char': ch, 'rotation': of}
                     key_rotation_error = 0
                 else:
                     print("key rotation error with existing rotation offset in key - TBD")
@@ -140,7 +141,7 @@ def doit(cipher):
         #
         # This case is not yet handled...
         #
-        elif key_char in [a for (a,x) in key.values()]:
+        elif key_char in [a['root_char'] for a in key.values()]:
             # duplicate key_val: key[a] and key[b] both map to the same letter
             print("duplicate key_val %c (orig %c offset %d) - TBD" % (key_char, plaintext_char, current_rotation))
             print("key:",key)
@@ -149,7 +150,7 @@ def doit(cipher):
         else:
             # Key looks good & is not currently in the dictionary, so add it with a starting rotation
             # offset of None (it will be set later on as the algorithm runs, in theory)
-            key[cipher_word] = (key_char, None)
+            key[cipher_word] = {'root_char': key_char, 'rotation': None}
 
         if key_rotation_error == 0:
             state.append({'start_rotation': start_rotation, 'key': key.copy()})
