@@ -85,7 +85,7 @@ def decryptit(cipher_list, key):
         if word in key:
             rot = key[word]['rotation']
             plaintext += key[word]['root_char']
-            if (rot != None) and (rot > 0):
+            if rot > 0:
                 key_list = rotate(key_list, rot)
                 reassign_key_letters(key, key_list)
         else:
@@ -139,7 +139,7 @@ def doit(cipher):
                     print("key rotation error with calculated rotation value in key - TBD")
                     break
 
-            if (of != None) and (key_rotation_error == 0):
+            if key_rotation_error == 0:
                 current_rotation = (current_rotation + of) % 26
 
         #
@@ -153,8 +153,8 @@ def doit(cipher):
 
         else:
             # Key looks good & is not currently in the dictionary, so add it with a starting rotation
-            # offset of None (it will be set later on as the algorithm runs, in theory)
-            key[cipher_word] = {'root_char': key_char, 'rotation': None, 'source': GUESSED}
+            # offset of 0
+            key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED}
 
         if key_rotation_error == 0:
             state.append({'start_rotation': start_rotation, 'key': key.copy()})
