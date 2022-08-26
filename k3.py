@@ -21,6 +21,9 @@
 import hashlib
 import random
 
+# Key entry types
+(GUESSED, CALCULATED) = range(2)
+
 # K1
 #cipher_words = ['89411894', '4254', '7171031', '4502', '971559793', '53177', '636187', '20', '4504', '376', '361', '57643', '85053600', '29', '7004062', '4468', '923921735', '946320122', '930424404', '88527391', '692473', '84524991', '87445918', '638440', '23', '52381']
 #cipher_text = "8505360071710319463201224502636187376700406263844057643636187717103197155979336129523819304244044504450237692392173589411894450245029304244048505360071710317171031700406270040624468450244687004062923921735531774468845249912097155979345043769304244044468850536006361878744591845028852739171710314468850536004502361450445048941189423450488527391923921735294468894118948852739144686384404502692473845249917171031425444686384409715597934502425470040625764363844020874459185764336145028852739163618792392173557643299715597936924733762336171710318505360020850536007171031930424404238505360063844063618787445918450288527391717103144688505360045023619715597938505360084524991523815764353177376894118944502425463844037670040626924736924732369247394632012294632012245044502523816384404468930424404576436361876384409715597937171031425457643376971559793700406288527391946320122"
@@ -126,13 +129,14 @@ def doit(cipher):
 
             elif key_rotation_error > 0:
                 print("Last iteration was key collision")
-                if of == None:
-                    print("Assign initial rotation offset for %s to %d" % (cipher_word, key_rotation_error))
+                if k['source'] == GUESSED:
+                    print("Assign calculated rotation offset for %s to %d" % (cipher_word, key_rotation_error))
                     of = key_rotation_error
-                    key[cipher_word] = {'root_char': ch, 'rotation': of}
+                    k['rotation'] = of
+                    k['source'] = CALCULATED
                     key_rotation_error = 0
                 else:
-                    print("key rotation error with existing rotation offset in key - TBD")
+                    print("key rotation error with calculated rotation value in key - TBD")
                     break
 
             if (of != None) and (key_rotation_error == 0):
@@ -150,7 +154,7 @@ def doit(cipher):
         else:
             # Key looks good & is not currently in the dictionary, so add it with a starting rotation
             # offset of None (it will be set later on as the algorithm runs, in theory)
-            key[cipher_word] = {'root_char': key_char, 'rotation': None}
+            key[cipher_word] = {'root_char': key_char, 'rotation': None, 'source': GUESSED}
 
         if key_rotation_error == 0:
             state.append({'start_rotation': start_rotation, 'key': key.copy()})
