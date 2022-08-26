@@ -143,9 +143,9 @@ def doit(cipher):
         #
         elif key_char in [a for (a,x) in key.values()]:
             # duplicate key_val: key[a] and key[b] both map to the same letter
-            print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
+            print("duplicate key_val %c (orig %c offset %d) - TBD" % (key_char, plaintext_char, current_rotation))
             print("key:",key)
-            key_rotation_error = 0   # ??
+            break
 
         else:
             # Key looks good & is not currently in the dictionary, so add it with a starting rotation
