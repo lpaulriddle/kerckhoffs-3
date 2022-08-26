@@ -23,6 +23,7 @@ import random
 
 # Key entry types
 (GUESSED, CALCULATED) = range(2)
+KEY_ROTATION_COLLISION = 0
 
 # K1
 #cipher_words = ['89411894', '4254', '7171031', '4502', '971559793', '53177', '636187', '20', '4504', '376', '361', '57643', '85053600', '29', '7004062', '4468', '923921735', '946320122', '930424404', '88527391', '692473', '84524991', '87445918', '638440', '23', '52381']
@@ -105,7 +106,7 @@ def doit(cipher):
 
     i = 0
     loop_count = 0   # temp so we can break out of infinite loops
-    key_rotation_error = 0
+    backtrack_status = None
 
     #
     # Variables to save with state (anything not explicitly set/assigned at start of while loop):
@@ -124,22 +125,24 @@ def doit(cipher):
 
             # key collision: key[n] already set to something other than what we are trying to assign
             if ch != key_char:
-                key_rotation_error = (ord(key_char) - ord(ch)) % 26
-                print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, key_rotation_error))
+                ev = (ord(key_char) - ord(ch)) % 26
+                backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
+                print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
 
-            elif key_rotation_error > 0:
+            elif backtrack_status and backtrack_status['reason'] == KEY_ROTATION_COLLISION:
                 print("Last iteration was key collision")
                 if k['source'] == GUESSED:
-                    print("Assign calculated rotation offset for %s to %d" % (cipher_word, key_rotation_error))
-                    of = key_rotation_error
+                    r = backtrack_status['expected_value']
+                    print("Assign calculated rotation offset for %s to %d" % (cipher_word, r))
+                    of = r
                     k['rotation'] = of
                     k['source'] = CALCULATED
-                    key_rotation_error = 0
+                    backtrack_status = None
                 else:
                     print("key rotation error with calculated rotation value in key - TBD")
                     break
 
-            if key_rotation_error == 0:
+            if backtrack_status == None:
                 current_rotation = (current_rotation + of) % 26
 
         #
@@ -156,7 +159,7 @@ def doit(cipher):
             # offset of 0
             key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED}
 
-        if key_rotation_error == 0:
+        if backtrack_status == None:
             state.append({'start_rotation': start_rotation, 'key': key.copy()})
             print("current state:", state)
             start_rotation = current_rotation
