@@ -10,7 +10,7 @@
 # - Return success or failure (key or None)
 # - Manage output somehow - verbosity toggle, periodic checkpoint output, ctrl-c to show current state, etc
 #
-# Data structures, programming languages, algorithm design and analysis, cryptography
+# Data structures, programming languages, algorithm design and analysis, cryptography, automata theory
 # Program to find exactly 26 code words and split cipher into a list
 # Modified/extended version of part 2 algorithm would take thousands of years to complete
 # Backtracking - devil in the details
@@ -23,7 +23,7 @@ import random
 
 # Key entry types
 (GUESSED, CALCULATED) = range(2)
-KEY_ROTATION_COLLISION = 0
+(KEY_ROTATION_COLLISION, CALCULATED_KEY_ROTATION_COLLISION) = range(2)
 
 # K1
 #cipher_words = ['89411894', '4254', '7171031', '4502', '971559793', '53177', '636187', '20', '4504', '376', '361', '57643', '85053600', '29', '7004062', '4468', '923921735', '946320122', '930424404', '88527391', '692473', '84524991', '87445918', '638440', '23', '52381']
@@ -118,47 +118,81 @@ def doit(cipher):
 
         print("word %s cur_char %c key_char %c current_rotation %d key" % (cipher_word, plaintext_char, key_char, current_rotation), key)
 
+        #
+        # State 1: cipher is present in key
+        #
         if cipher_word in key:
             k = key[cipher_word]
             ch = k['root_char']
             of = k['rotation']
 
-            # key collision: key[n] already set to something other than what we are trying to assign
-            if ch != key_char:
+            #
+            # If we got here after backtracking, check what happened and figure out what to do
+            #
+            if backtrack_status:
+                if backtrack_status['reason'] == KEY_ROTATION_COLLISION:
+                    print("Last iteration was key collision")
+                    if k['source'] == GUESSED:
+                        r = backtrack_status['expected_value']
+                        print("Assign calculated rotation offset for %s to %d" % (cipher_word, r))
+                        of = r
+                        k['rotation'] = of
+                        k['source'] = CALCULATED
+                        backtrack_status = None
+
+                    else:
+
+                        #
+                        # Collision after calculating the rotation - dead end - keep backtracking
+                        # until we find a key with a guessed rotation value
+                        # NOTE- eventually need to work through keys in reverse order of occurrence in the cipher,
+                        # backtracking to the first occurrence of each key..
+                        # As of Python3.7, we can rely on keys() to return the keys in order of insertion
+                        # so, just need to keep track of first occurrence index of each key
+                        #
+                        print("key rotation error for %s with calculated rotation value %d - dead end" % (cipher_word, of))
+                        backtrack_status = { 'reason': CALCULATED_KEY_ROTATION_COLLISION }
+
+                elif backtrack_status['reason'] == CALCULATED_KEY_ROTATION_COLLISION:
+                    if k['source'] == GUESSED:
+                        print("Placeholder - start trying new rotation offsets at position %d word %s char %c" % (i, cipher_word, ch))
+                        break
+                    # Not a guessed rotation offset- fall through and keep backtracking
+
+                else:
+                    print("Unhandled backtrack status", backtrack_status)
+                    break
+
+            #
+            # Not backtracking: check for key collision (key[n] already set to something other than
+            # what we are trying to assign
+            #
+            elif ch != key_char:
                 ev = (ord(key_char) - ord(ch)) % 26
                 backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
                 print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
-
-            elif backtrack_status and backtrack_status['reason'] == KEY_ROTATION_COLLISION:
-                print("Last iteration was key collision")
-                if k['source'] == GUESSED:
-                    r = backtrack_status['expected_value']
-                    print("Assign calculated rotation offset for %s to %d" % (cipher_word, r))
-                    of = r
-                    k['rotation'] = of
-                    k['source'] = CALCULATED
-                    backtrack_status = None
-                else:
-                    print("key rotation error with calculated rotation value in key - TBD")
-                    break
 
             if backtrack_status == None:
                 current_rotation = (current_rotation + of) % 26
 
         #
-        # This case is not yet handled...
+        # State 2: duplicate key_val (key[a] and key[b] both map to the same letter) (TBD)
         #
         elif key_char in [a['root_char'] for a in key.values()]:
-            # duplicate key_val: key[a] and key[b] both map to the same letter
             print("duplicate key_val %c (orig %c offset %d) - TBD" % (key_char, plaintext_char, current_rotation))
             print("key:",key)
             break
 
+        #
+        # State 3: cipher word not present in key and no duplicate key mappings
+        #
         else:
-            # Key looks good & is not currently in the dictionary, so add it with a starting rotation
-            # offset of 0
+            # Add this word to the key with an initial (guessed) rotation of 0
             key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED}
 
+        #
+        # Backtrack if needed; otherwise, save state and keep going
+        #
         if backtrack_status == None:
             state.append({'start_rotation': start_rotation, 'key': key.copy()})
             print("current state:", state)
