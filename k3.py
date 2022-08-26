@@ -100,7 +100,6 @@ def doit(cipher):
     key = {}
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
-    previous_word = None
 
     i = 0
     loop_count = 0   # temp so we can break out of infinite loops
@@ -108,7 +107,7 @@ def doit(cipher):
 
     #
     # Variables to save with state (anything not explicitly set/assigned at start of while loop):
-    # current_rotation, start_rotation, key, previous_word
+    # current_rotation, start_rotation, key
     #
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
@@ -153,13 +152,9 @@ def doit(cipher):
             key[cipher_word] = (key_char, None)
 
         if key_rotation_error == 0:
-            state.append({'current_rotation': current_rotation,
-                      'start_rotation': start_rotation,
-                      'previous_word': previous_word,
-                      'key': key.copy()})
+            state.append({'start_rotation': start_rotation, 'key': key.copy()})
             print("current state:", state)
             start_rotation = current_rotation
-            previous_word = cipher_word
             i += 1
 
         else:
@@ -171,10 +166,8 @@ def doit(cipher):
 
             # restore the previous state
             d = state.pop()
-            #current_rotation = d['current_rotation']
             start_rotation = d['start_rotation']
             current_rotation = start_rotation
-            previous_word = d['previous_word']
             key = d['key']
 
             loop_count += 1
