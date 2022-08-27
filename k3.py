@@ -197,12 +197,12 @@ def doit(cipher):
                 current_rotation = (current_rotation + of) % 26
 
         #
-        # State 2: duplicate key_val (key[a] and key[b] both map to the same letter) (TBD)
+        # State 2: duplicate key_val (key[a] and key[b] both map to the same letter)
+        #          Pretty sure this just means we need to backtrack, but we'll see
         #
         elif key_char in [a['root_char'] for a in key.values()]:
-            print("duplicate key_val %c (orig %c offset %d) - TBD" % (key_char, plaintext_char, current_rotation))
-            print("key:",key)
-            break
+            print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
+            backtrack_status = { 'reason': CALCULATED_KEY_ROTATION_COLLISION }
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
