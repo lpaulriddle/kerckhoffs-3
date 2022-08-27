@@ -116,7 +116,7 @@ def doit(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
 
-        print("word %s cur_char %c key_char %c current_rotation %d key" % (cipher_word, plaintext_char, key_char, current_rotation), key)
+        print("index %d word %s cur_char %c key_char %c current_rotation %d key" % (i, cipher_word, plaintext_char, key_char, current_rotation), key)
 
         #
         # State 1: cipher is present in key
@@ -155,27 +155,14 @@ def doit(cipher):
 
                 elif backtrack_status['reason'] == CALCULATED_KEY_ROTATION_COLLISION:
                     if k['source'] == GUESSED:
-                        #used_chars = [a['root_char'] for a in key.values()]
-                        #while of < 25:
-                        #    of += 1
-                        #    ch = chr((ord(ch) - ord('a') - 1) % 26 + ord('a'))
-                        #    if ch not in used_chars:
-                        #        print("Trying new rotation value for word %s: char %c rotation %d" % (cipher_word, ch, of))
-                        #        k['rotation'] = of
-                        #        k['root_char'] = ch
-                        #        break
-                        #else:
-                        #    # We've run through all possible rotation values, so need to backtrack again
-                        #    print("Placeholder - tried all possible rotation values for %s" % cipher_word)
-                        #    break
                         of += 1
                         if of == 26:
                             # We've run through all possible rotation values, so need to backtrack again
-                            print("Placeholder - tried all possible rotation values for %s" % cipher_word)
-                            break
-                        print("Trying new rotation value %d for word %s" % (of, cipher_word))
-                        k['rotation'] = of
-                        backtrack_status = None
+                            print("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                        else:
+                            print("Trying new rotation value %d for word %s" % (of, cipher_word))
+                            k['rotation'] = of
+                            backtrack_status = None
                     else:
                         # Not a guessed rotation offset- fall through and keep backtracking
                         pass
@@ -240,13 +227,13 @@ def doit(cipher):
 
     print("Final value of i=%d" % i)
     print("Key:", key)
+    print("Loop count:", loop_count)
     #print("Final state:", state)
     return key
 
 # Initialize position offsets to zero and create a list of tuples
-#cipher = list(zip(cipher_list, 'congratulationsyou'))
-cipher = list(zip(cipher_list, 'congratulatio'))
-#cipher = list(zip(cipher_list, 'congratula'))
+cipher = list(zip(cipher_list, 'congratulationsyouareac'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareacr'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
