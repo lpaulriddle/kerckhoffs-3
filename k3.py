@@ -138,7 +138,11 @@ def doit(cipher):
                         of = r
                         k['rotation'] = of
                         k['source'] = CALCULATED
-                        backtrack_status = None
+                        if i == k['first_occurrence']:
+                            backtrack_status = None
+                        else:
+                            print("Need to spool back to first occurrence of %s (%d)" % (cipher_word, k['first_occurrence']))
+                            break
 
                     else:
 
@@ -162,7 +166,11 @@ def doit(cipher):
                         else:
                             print("Trying new rotation value %d for word %s" % (of, cipher_word))
                             k['rotation'] = of
-                            backtrack_status = None
+                            if i == k['first_occurrence']:
+                                backtrack_status = None
+                            else:
+                                print("Need to spool back to first occurrence of %s (%d)" % (cipher_word, k['first_occurrence']))
+                                break
                     else:
                         # Not a guessed rotation offset- fall through and keep backtracking
                         pass
@@ -196,7 +204,7 @@ def doit(cipher):
         #
         else:
             # Add this word to the key with an initial (guessed) rotation of 0
-            key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED}
+            key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED, 'first_occurrence': i}
 
         #
         # Backtrack if needed; otherwise, save state and keep going
@@ -232,8 +240,8 @@ def doit(cipher):
     return key
 
 # Initialize position offsets to zero and create a list of tuples
-cipher = list(zip(cipher_list, 'congratulationsyouareac'))
-#cipher = list(zip(cipher_list, 'congratulationsyouareacr'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareac'))
+cipher = list(zip(cipher_list, 'congratulationsyouareacr'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
