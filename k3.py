@@ -155,9 +155,30 @@ def doit(cipher):
 
                 elif backtrack_status['reason'] == CALCULATED_KEY_ROTATION_COLLISION:
                     if k['source'] == GUESSED:
-                        print("Placeholder - start trying new rotation offsets at position %d word %s char %c" % (i, cipher_word, ch))
-                        break
-                    # Not a guessed rotation offset- fall through and keep backtracking
+                        #used_chars = [a['root_char'] for a in key.values()]
+                        #while of < 25:
+                        #    of += 1
+                        #    ch = chr((ord(ch) - ord('a') - 1) % 26 + ord('a'))
+                        #    if ch not in used_chars:
+                        #        print("Trying new rotation value for word %s: char %c rotation %d" % (cipher_word, ch, of))
+                        #        k['rotation'] = of
+                        #        k['root_char'] = ch
+                        #        break
+                        #else:
+                        #    # We've run through all possible rotation values, so need to backtrack again
+                        #    print("Placeholder - tried all possible rotation values for %s" % cipher_word)
+                        #    break
+                        of += 1
+                        if of == 26:
+                            # We've run through all possible rotation values, so need to backtrack again
+                            print("Placeholder - tried all possible rotation values for %s" % cipher_word)
+                            break
+                        print("Trying new rotation value %d for word %s" % (of, cipher_word))
+                        k['rotation'] = of
+                        backtrack_status = None
+                    else:
+                        # Not a guessed rotation offset- fall through and keep backtracking
+                        pass
 
                 else:
                     print("Unhandled backtrack status", backtrack_status)
