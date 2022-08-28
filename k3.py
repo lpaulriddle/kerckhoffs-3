@@ -140,7 +140,12 @@ def doit(cipher):
 
                 elif backtrack_status['reason'] == KEY_ROTATION_COLLISION:
                     print("Last iteration was key collision")
-                    if k['source'] == GUESSED:
+
+                    #
+                    # We can only be sure about offsets for consecutive values of the same word
+                    # (or, eventually, where all intervening keys also have calculated values)
+                    #
+                    if k['source'] == GUESSED and backtrack_status['last_word'] == cipher_word:
                         r = backtrack_status['expected_value']
                         print("Assign calculated rotation offset for %s to %d" % (cipher_word, r))
                         of = r
@@ -193,7 +198,7 @@ def doit(cipher):
             #
             elif ch != key_char:
                 ev = (ord(key_char) - ord(ch)) % 26
-                backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
+                backtrack_status = { 'reason': KEY_ROTATION_COLLISION, 'expected_value': ev, 'last_word': cipher_word }
                 print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
 
             if backtrack_status == None:
@@ -250,8 +255,9 @@ def doit(cipher):
     return key
 
 # Initialize position offsets to zero and create a list of tuples
-#cipher = list(zip(cipher_list, 'congratulationsyouareac'))
-cipher = list(zip(cipher_list, 'congratulationsyouareacry'))
+cipher = list(zip(cipher_list, 'congratulationsyou'))
+
+#cipher = list(zip(cipher_list, 'congratulationsyouareacry'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
