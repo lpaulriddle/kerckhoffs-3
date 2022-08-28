@@ -23,7 +23,7 @@ import random
 
 # Key entry types
 (GUESSED, CALCULATED) = range(2)
-(KEY_ROTATION_COLLISION, CALCULATED_KEY_ROTATION_COLLISION) = range(2)
+(KEY_ROTATION_COLLISION, DEAD_END, BACKTRACK_TO_INDEX) = range(3)
 
 # K1
 #cipher_words = ['89411894', '4254', '7171031', '4502', '971559793', '53177', '636187', '20', '4504', '376', '361', '57643', '85053600', '29', '7004062', '4468', '923921735', '946320122', '930424404', '88527391', '692473', '84524991', '87445918', '638440', '23', '52381']
@@ -130,7 +130,15 @@ def doit(cipher):
             # If we got here after backtracking, check what happened and figure out what to do
             #
             if backtrack_status:
-                if backtrack_status['reason'] == KEY_ROTATION_COLLISION:
+                if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
+                    target_index = backtrack_status['index']
+                    if i == target_index:
+                        print("Finished backtracking to index", i)
+                        backtrack_status = None
+                    else:
+                        print("Still backtracking to index", i)
+
+                elif backtrack_status['reason'] == KEY_ROTATION_COLLISION:
                     print("Last iteration was key collision")
                     if k['source'] == GUESSED:
                         r = backtrack_status['expected_value']
@@ -142,7 +150,7 @@ def doit(cipher):
                             backtrack_status = None
                         else:
                             print("Need to spool back to first occurrence of %s (%d)" % (cipher_word, k['first_occurrence']))
-                            break
+                            backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': k['first_occurrence'] }
 
                     else:
 
@@ -155,9 +163,9 @@ def doit(cipher):
                         # so, just need to keep track of first occurrence index of each key
                         #
                         print("key rotation error for %s with calculated rotation value %d - dead end" % (cipher_word, of))
-                        backtrack_status = { 'reason': CALCULATED_KEY_ROTATION_COLLISION }
+                        backtrack_status = { 'reason': DEAD_END }
 
-                elif backtrack_status['reason'] == CALCULATED_KEY_ROTATION_COLLISION:
+                elif backtrack_status['reason'] == DEAD_END:
                     if k['source'] == GUESSED:
                         of += 1
                         if of == 26:
@@ -170,7 +178,7 @@ def doit(cipher):
                                 backtrack_status = None
                             else:
                                 print("Need to spool back to first occurrence of %s (%d)" % (cipher_word, k['first_occurrence']))
-                                break
+                                backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': k['first_occurrence'] }
                     else:
                         # Not a guessed rotation offset- fall through and keep backtracking
                         pass
@@ -196,13 +204,15 @@ def doit(cipher):
         #          Pretty sure this just means we need to backtrack, but we'll see
         #
         elif key_char in [a['root_char'] for a in key.values()]:
+            assert(backtrack_status == None)
             print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
-            backtrack_status = { 'reason': CALCULATED_KEY_ROTATION_COLLISION }
+            backtrack_status = { 'reason': DEAD_END }
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
         #
         else:
+            assert(backtrack_status == None)
             # Add this word to the key with an initial (guessed) rotation of 0
             key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED, 'first_occurrence': i}
 
@@ -241,7 +251,7 @@ def doit(cipher):
 
 # Initialize position offsets to zero and create a list of tuples
 #cipher = list(zip(cipher_list, 'congratulationsyouareac'))
-cipher = list(zip(cipher_list, 'congratulationsyouareacr'))
+cipher = list(zip(cipher_list, 'congratulationsyouareacry'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
