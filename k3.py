@@ -229,7 +229,13 @@ def doit(cipher):
         #
         else:
             # Add this word to the key with an initial (guessed) rotation of 0
-            key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED}
+            rot_val = 0
+            rot_source = GUESSED
+            if cipher_word in known_rotation_offsets:
+                rot_val = known_rotation_offsets[cipher_word]
+                rot_source = CALCULATED
+                current_rotation = (current_rotation + rot_val) % 26
+            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'source': rot_source }
 
         #
         # Backtrack if needed; otherwise, save state and keep going
@@ -268,6 +274,5 @@ def doit(cipher):
 cipher = list(zip(cipher_list, 'congratulatio'))
 #cipher = list(zip(cipher_list, 'congratula'))
 #cipher = list(zip(cipher_list, 'thecache'))
-find_known_rotation_offsets(cipher)
-#key = doit(cipher)
-#print(decryptit(cipher_list, key))
+key = doit(cipher)
+print(decryptit(cipher_list, key))
