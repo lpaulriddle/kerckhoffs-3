@@ -151,8 +151,8 @@ def doit(cipher):
             #
             if backtrack_status:
                 if backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
-                   # Redo this :)
-                   if k['source'] == GUESSED:
+                    # Redo this :)
+                    if k['source'] == GUESSED:
                         of += 1
                         if of == 26:
                             # We've run through all possible rotation values, so need to backtrack again
@@ -161,7 +161,7 @@ def doit(cipher):
                         print("Trying new rotation value %d for word %s" % (of, cipher_word))
                         k['rotation'] = of
                         backtrack_status = None
-                   else:
+                    else:
                         # Not a guessed rotation offset- fall through and keep backtracking
                         pass
 
@@ -215,8 +215,9 @@ def doit(cipher):
         # Backtrack if needed; otherwise, save state and keep going
         #
         if backtrack_status == None:
-            state.append({'start_rotation': start_rotation, 'key': key.copy()})
-            print("current state:", state)
+            state_vars = { 'start_rotation': start_rotation, 'key': key.copy() }
+            print("state_vars:", state_vars)
+            state.append(state_vars)
             start_rotation = current_rotation
             i += 1
 
