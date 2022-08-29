@@ -94,6 +94,25 @@ def decryptit(cipher_list, key):
             break
     return plaintext
 
+#
+# Figure out what offsets we can, based on the plaintext we're trying to fit
+#
+def find_known_rotation_offsets(cipher):
+    offsets = {}
+
+    #
+    # TBD: compute offsets for words that lie between two words with known offsets
+    # E.g. if we know offset for 5555, and sequence is 5555 4444 5555, we should
+    # be able to compute 4444
+    #
+    for i in range(len(cipher) - 1):
+        if cipher[i][0] == cipher[i + 1][0]:
+            rot = (ord(cipher[i+1][1]) - ord(cipher[i][1])) % 26
+            offsets[cipher[i][0]] = rot
+
+    print("Calculated the following rotation offsets:", offsets)
+    return offsets
+
 def doit(cipher):
     state = []
 #    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
@@ -103,6 +122,7 @@ def doit(cipher):
     key = {}
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
+    known_rotation_offsets = find_known_rotation_offsets(cipher)
 
     i = 0
     loop_count = 0   # temp so we can break out of infinite loops
@@ -248,5 +268,6 @@ def doit(cipher):
 cipher = list(zip(cipher_list, 'congratulatio'))
 #cipher = list(zip(cipher_list, 'congratula'))
 #cipher = list(zip(cipher_list, 'thecache'))
-key = doit(cipher)
-print(decryptit(cipher_list, key))
+find_known_rotation_offsets(cipher)
+#key = doit(cipher)
+#print(decryptit(cipher_list, key))
