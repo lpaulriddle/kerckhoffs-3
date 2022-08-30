@@ -135,6 +135,7 @@ def doit(cipher):
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
+        try_new_rotation_offset = False
 
         print("word %s plaintext_char %c key_char %c current_rotation %d key" % (cipher_word, plaintext_char, key_char, current_rotation), key)
 
@@ -151,27 +152,22 @@ def doit(cipher):
             #
             if backtrack_status:
                 if backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
-                    # Redo this :)
-                    if k['source'] == GUESSED:
-                        of += 1
-                        if of == 26:
-                            # We've run through all possible rotation values, so need to backtrack again
-                            print("Placeholder - tried all possible rotation values for %s" % cipher_word)
-                            break
-                        print("Trying new rotation value %d for word %s" % (of, cipher_word))
-                        k['rotation'] = of
-                        backtrack_status = None
+                    ordered_keys = [k for k in key.keys() if key[k]['source'] == GUESSED]
+                    print("ordered_keys", ordered_keys)
+                    most_recent_guessed_word = ordered_keys[-1]
+                    backtrack_index = key[most_recent_guessed_word]['first_occurrence']
+                    if i == backtrack_index:
+                        try_new_rotation_offset = True
                     else:
-                        # Not a guessed rotation offset- fall through and keep backtracking
-                        pass
-
+                        print("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
+                        break
                 else:
                     print("Unhandled backtrack status", backtrack_status)
                     break
 
             #
             # Not backtracking: check for key collision (key[n] already set to something other than
-            # what we are trying to assign
+            # what we are trying to assign)
             #
             elif ch != key_char:
                 ev = (ord(key_char) - ord(ch)) % 26
@@ -183,6 +179,16 @@ def doit(cipher):
                 #
                 backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
                 print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
+
+            if try_new_rotation_offset:
+                of += 1
+                if of == 26:
+                    # We've run through all possible rotation values, so need to backtrack again
+                    print("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                    break
+                print("Try new rotation value %d for word %s" % (of, cipher_word))
+                k['rotation'] = of
+                backtrack_status = None
 
             if backtrack_status == None:
                 current_rotation = (current_rotation + of) % 26
