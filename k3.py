@@ -120,6 +120,7 @@ def doit(cipher):
 #        ones = int(thing) % 10
 #        key[thing] = { 'root_char': key[thing], 'rotation': ones }
     key = {}
+    guessed_keys = []           # list of guessed cipher words in order of first appearance
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
     known_rotation_offsets = find_known_rotation_offsets(cipher)
@@ -159,9 +160,7 @@ def doit(cipher):
                         pass  # Just keep going until we get to the target index
 
                 elif backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
-                    ordered_keys = [k for k in key.keys() if key[k]['source'] == GUESSED]
-                    print("ordered_keys", ordered_keys)
-                    most_recent_guessed_word = ordered_keys[-1]
+                    most_recent_guessed_word = guessed_keys[-1]
                     backtrack_index = key[most_recent_guessed_word]['first_occurrence']
                     if i == backtrack_index:
                         try_new_rotation_offset = True
@@ -192,6 +191,7 @@ def doit(cipher):
                 if of == 26:
                     # We've run through all possible rotation values, so need to backtrack again
                     print("(Placeholder) Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                    print("Current guessed_keys:", guessed_keys)
                     break
                 print("Try new rotation value %d for word %s" % (of, cipher_word))
                 k['rotation'] = of
@@ -223,13 +223,15 @@ def doit(cipher):
                 rot_val = known_rotation_offsets[cipher_word]
                 rot_source = CALCULATED
                 current_rotation = (current_rotation + rot_val) % 26
+            else:
+                guessed_keys.append(cipher_word)
             key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'source': rot_source, 'first_occurrence': i }
 
         #
         # Backtrack if needed; otherwise, save state and keep going
         #
         if backtrack_status == None:
-            state_vars = { 'start_rotation': start_rotation, 'key': key.copy() }
+            state_vars = { 'start_rotation': start_rotation, 'key': key.copy(), 'guessed_keys': guessed_keys.copy() }
             print("state_vars:", state_vars)
             state.append(state_vars)
             start_rotation = current_rotation
@@ -245,6 +247,7 @@ def doit(cipher):
             # restore the previous state
             d = state.pop()
             start_rotation = d['start_rotation']
+            guessed_keys = d['guessed_keys']
             current_rotation = start_rotation
             key = d['key']
 
