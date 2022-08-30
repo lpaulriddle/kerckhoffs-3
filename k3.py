@@ -23,7 +23,7 @@ import random
 
 # Key entry types
 (GUESSED, CALCULATED) = range(2)
-(KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE) = range(2)
+(KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX) = range(3)
 
 # K1
 #cipher_words = ['89411894', '4254', '7171031', '4502', '971559793', '53177', '636187', '20', '4504', '376', '361', '57643', '85053600', '29', '7004062', '4468', '923921735', '946320122', '930424404', '88527391', '692473', '84524991', '87445918', '638440', '23', '52381']
@@ -151,7 +151,14 @@ def doit(cipher):
             # If we got here after backtracking, check what happened and figure out what to do
             #
             if backtrack_status:
-                if backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
+                if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
+                    backtrack_index = backtrack_status['index']
+                    if i == backtrack_index:
+                        try_new_rotation_offset = True
+                    else:
+                        pass  # Just keep going until we get to the target index
+
+                elif backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
                     ordered_keys = [k for k in key.keys() if key[k]['source'] == GUESSED]
                     print("ordered_keys", ordered_keys)
                     most_recent_guessed_word = ordered_keys[-1]
@@ -160,7 +167,7 @@ def doit(cipher):
                         try_new_rotation_offset = True
                     else:
                         print("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
-                        break
+                        backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
                 else:
                     print("Unhandled backtrack status", backtrack_status)
                     break
@@ -184,7 +191,7 @@ def doit(cipher):
                 of += 1
                 if of == 26:
                     # We've run through all possible rotation values, so need to backtrack again
-                    print("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                    print("(Placeholder) Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
                     break
                 print("Try new rotation value %d for word %s" % (of, cipher_word))
                 k['rotation'] = of
