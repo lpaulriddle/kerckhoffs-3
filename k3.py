@@ -199,6 +199,7 @@ def doit(cipher):
         # State 3: cipher word not present in key and no duplicate key mappings
         #
         else:
+
             #
             # If we were able to pre-calculate the rotation offset, use that; otherwise,
             # start things off with an initial value of 0
@@ -209,7 +210,7 @@ def doit(cipher):
                 rot_val = known_rotation_offsets[cipher_word]
                 rot_source = CALCULATED
                 current_rotation = (current_rotation + rot_val) % 26
-            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'source': rot_source }
+            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'source': rot_source, 'first_occurrence': i }
 
         #
         # Backtrack if needed; otherwise, save state and keep going
