@@ -138,7 +138,7 @@ def doit(cipher):
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
         try_new_rotation_offset = False
 
-        print("word %s plaintext_char %c key_char %c current_rotation %d key" % (cipher_word, plaintext_char, key_char, current_rotation), key)
+        print("index %d word %s plaintext_char %c key_char %c current_rotation %d key" % (i, cipher_word, plaintext_char, key_char, current_rotation), key)
 
         #
         # State 1: cipher word is present in key
@@ -190,12 +190,20 @@ def doit(cipher):
                 of += 1
                 if of == 26:
                     # We've run through all possible rotation values, so need to backtrack again
-                    print("(Placeholder) Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                    print("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
                     print("Current guessed_keys:", guessed_keys)
-                    break
-                print("Try new rotation value %d for word %s" % (of, cipher_word))
-                k['rotation'] = of
-                backtrack_status = None
+                    if len(guessed_keys) < 2:
+                        print("No more keys to guess")
+                        break
+                    # Go back and start iterating over the second-most-recently added key
+                    next_word = guessed_keys[-2]
+                    next_index = key[next_word]['first_occurrence']
+                    print("backtrack to index %d word %s (current index %d)" % (next_index, next_word, i))
+                    backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': next_index }
+                else:
+                    print("Try new rotation value %d for word %s" % (of, cipher_word))
+                    k['rotation'] = of
+                    backtrack_status = None
 
             if backtrack_status == None:
                 current_rotation = (current_rotation + of) % 26
