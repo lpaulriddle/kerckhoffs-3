@@ -126,7 +126,7 @@ def doit(cipher):
     known_rotation_offsets = find_known_rotation_offsets(cipher)
 
     i = 0
-    loop_count = 0   # temp so we can break out of infinite loops
+    backtrack_loop_count = 0
     backtrack_status = None
 
     #
@@ -259,19 +259,20 @@ def doit(cipher):
             current_rotation = start_rotation
             key = d['key']
 
-            loop_count += 1
-            if loop_count >= 10000:
-                print("Breaking loop")
-                break
+            backtrack_loop_count += 1
+            #if backtrack_loop_count >= 10000:
+            #    print("Breaking loop")
+            #    break
 
     print("Final value of i=%d" % i)
     print("Key:", key)
     #print("Final state:", state)
+    print("Loop Count:", loop_count)
     return key
 
 # Initialize position offsets to zero and create a list of tuples
-#cipher = list(zip(cipher_list, 'congratulationsyou'))
-cipher = list(zip(cipher_list, 'congratulatio'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
+cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
