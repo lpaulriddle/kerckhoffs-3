@@ -25,7 +25,7 @@ import random
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Key entry types
-(GUESSED, CALCULATED) = range(2)
+(GUESSED, CALCULATED, KNOWN) = range(3)
 (KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX) = range(3)
 
 # K1
@@ -118,10 +118,11 @@ def find_known_rotation_offsets(cipher):
 
 def doit(cipher):
     state = []
+#    key = { '652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f' }
 #    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
 #    for thing in key.keys():
 #        ones = int(thing) % 10
-#        key[thing] = { 'root_char': key[thing], 'rotation': ones }
+#        key[thing] = { 'root_char': key[thing], 'rotation': ones, 'source': KNOWN }
     key = {}
     guessed_keys = []           # list of guessed cipher words in order of first appearance
     current_rotation = 0            # alphabet offset at the current point in the cipher
@@ -270,7 +271,7 @@ def doit(cipher):
     print("Final value of i=%d" % i)
     print("Key:", key)
     #print("Final state:", state)
-    print("Loop Count:", loop_count)
+    print("Backtrack Loop Count:", backtrack_loop_count)
     return key
 
 # Initialize position offsets to zero and create a list of tuples
