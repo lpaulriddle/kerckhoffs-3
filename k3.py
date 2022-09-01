@@ -19,7 +19,10 @@
 # Python debugger
 
 import hashlib
+import logging
 import random
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Key entry types
 (GUESSED, CALCULATED) = range(2)
@@ -50,7 +53,7 @@ while i < len(cipher_text) - 1:
             break
     i = j
 
-print("cipher_list", cipher_list)
+print("cipher_list:", cipher_list)
 
 #
 # Make sure we have a match
@@ -138,7 +141,7 @@ def doit(cipher):
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
         try_new_rotation_offset = False
 
-        print("index %d word %s plaintext_char %c key_char %c current_rotation %d key" % (i, cipher_word, plaintext_char, key_char, current_rotation), key)
+        logging.debug("index %d word %s plaintext_char %c key_char %c current_rotation %d key %s" % (i, cipher_word, plaintext_char, key_char, current_rotation, key))
 
         #
         # State 1: cipher word is present in key
@@ -165,10 +168,10 @@ def doit(cipher):
                     if i == backtrack_index:
                         try_new_rotation_offset = True
                     else:
-                        print("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
+                        logging.debug("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
                         backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
                 else:
-                    print("Unhandled backtrack status", backtrack_status)
+                    logging.error("Unhandled backtrack status %d" % backtrack_status)
                     break
 
             #
@@ -184,24 +187,24 @@ def doit(cipher):
                 # except for (I think) the first occurrence of the cipher word..
                 #
                 backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
-                print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
+                logging.debug("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
 
             if try_new_rotation_offset:
                 of += 1
                 if of == 26:
                     # We've run through all possible rotation values, so need to backtrack again
-                    print("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
-                    print("Current guessed_keys:", guessed_keys)
+                    logging.debug("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                    logging.debug("Current guessed_keys: %s" % guessed_keys)
                     if len(guessed_keys) < 2:
                         print("No more keys to guess")
                         break
                     # Go back and start iterating over the second-most-recently added key
                     next_word = guessed_keys[-2]
                     next_index = key[next_word]['first_occurrence']
-                    print("backtrack to index %d word %s (current index %d)" % (next_index, next_word, i))
+                    logging.debug("backtrack to index %d word %s (current index %d)" % (next_index, next_word, i))
                     backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': next_index }
                 else:
-                    print("Try new rotation value %d for word %s" % (of, cipher_word))
+                    logging.debug("Try new rotation value %d for word %s" % (of, cipher_word))
                     k['rotation'] = of
                     backtrack_status = None
 
@@ -213,7 +216,7 @@ def doit(cipher):
         #          Pretty sure this just means we need to backtrack, but we'll see
         #
         elif key_char in [a['root_char'] for a in key.values()]:
-            print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
+            logging.debug("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
             backtrack_status = { 'reason': DUPLICATE_KEY_VALUE }
 
         #
@@ -240,13 +243,13 @@ def doit(cipher):
         #
         if backtrack_status == None:
             state_vars = { 'start_rotation': start_rotation, 'key': key.copy(), 'guessed_keys': guessed_keys.copy() }
-            print("state_vars:", state_vars)
+            logging.debug("state_vars: %s" % state_vars)
             state.append(state_vars)
             start_rotation = current_rotation
             i += 1
 
         else:
-            print("Backtracking")
+            logging.debug("Backtracking")
             i -= 1
             if i < 0:
                 print("Could not find a fit... giving up")
