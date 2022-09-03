@@ -159,6 +159,7 @@ def doit(cipher):
                 if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
                     backtrack_index = backtrack_status['index']
                     if i == backtrack_index:
+                        of += 1
                         try_new_rotation_offset = True
                     else:
                         pass  # Just keep going until we get to the target index
@@ -167,7 +168,21 @@ def doit(cipher):
                     most_recent_guessed_word = guessed_keys[-1]
                     backtrack_index = key[most_recent_guessed_word]['first_occurrence']
                     if i == backtrack_index:
+                        # We are already at the first occurrence of the most recent guessed word
+                        if 'expected_value' in backtrack_status:
+                            of = backtrack_status['expected_value']
+                            logging.debug("Set rotation for %s to calculated value %d" % (cipher_word, of))
+
+                            #
+                            # Need` to remove the current key from list of guessed keys for this and future frames
+                            # so we don't later try to increment a calculated rotation offset.. however, not sure
+                            # if the last element on the list will always be the current word... hence the assert()
+                            #
+                            assert(guessed_keys.pop() == cipher_word)
+                        else:
+                            of += 1
                         try_new_rotation_offset = True
+                        #break
                     else:
                         logging.debug("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
                         backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
@@ -191,7 +206,6 @@ def doit(cipher):
                 logging.debug("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
 
             if try_new_rotation_offset:
-                of += 1
                 if of == 26:
                     # We've run through all possible rotation values, so need to backtrack again
                     logging.debug("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
@@ -243,14 +257,18 @@ def doit(cipher):
         # Backtrack if needed; otherwise, save state and keep going
         #
         if backtrack_status == None:
-            state_vars = { 'start_rotation': start_rotation, 'key': key.copy(), 'guessed_keys': guessed_keys.copy() }
+            state_vars = {
+                'start_rotation': start_rotation,
+                'key': key.copy(),
+                'guessed_keys': guessed_keys.copy()
+            }
             logging.debug("state_vars: %s" % state_vars)
             state.append(state_vars)
             start_rotation = current_rotation
             i += 1
 
         else:
-            logging.debug("Backtracking")
+            logging.debug("Backtracking- status: %s" % backtrack_status)
             i -= 1
             if i < 0:
                 print("Could not find a fit... giving up")
@@ -275,8 +293,9 @@ def doit(cipher):
     return key
 
 # Initialize position offsets to zero and create a list of tuples
+cipher = list(zip(cipher_list, 'congratulationsyouareacry'))
 #cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
-cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
