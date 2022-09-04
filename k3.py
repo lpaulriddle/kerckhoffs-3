@@ -21,11 +21,11 @@
 import hashlib
 import logging
 import random
+import sys
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
 
-# Key entry types
-(GUESSED, CALCULATED, KNOWN) = range(3)
+# Backtracking reasons
 (KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX) = range(3)
 
 # K1
@@ -122,7 +122,7 @@ def doit(cipher):
 #    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
 #    for thing in key.keys():
 #        ones = int(thing) % 10
-#        key[thing] = { 'root_char': key[thing], 'rotation': ones, 'source': KNOWN }
+#        key[thing] = { 'root_char': key[thing], 'rotation': ones }
     key = {}
     guessed_keys = []           # list of guessed cipher words in order of first appearance
     current_rotation = 0            # alphabet offset at the current point in the cipher
@@ -244,14 +244,12 @@ def doit(cipher):
             # start things off with an initial value of 0
             #
             rot_val = 0
-            rot_source = GUESSED
             if cipher_word in known_rotation_offsets:
                 rot_val = known_rotation_offsets[cipher_word]
-                rot_source = CALCULATED
                 current_rotation = (current_rotation + rot_val) % 26
             else:
                 guessed_keys.append(cipher_word)
-            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'source': rot_source, 'first_occurrence': i }
+            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
 
         #
         # Backtrack if needed; otherwise, save state and keep going
