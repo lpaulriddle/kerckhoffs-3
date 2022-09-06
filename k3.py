@@ -180,9 +180,9 @@ def doit(cipher):
                             #
                             assert(guessed_keys.pop() == cipher_word)
                         else:
+                            # No expected_value - likely a DUPLICATE_KEY_VALUE - just try incrementing the rotation
                             of += 1
                         try_new_rotation_offset = True
-                        #break
                     else:
                         logging.debug("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
                         backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
@@ -203,7 +203,7 @@ def doit(cipher):
                 # except for (I think) the first occurrence of the cipher word..
                 #
                 backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
-                logging.debug("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
+                logging.debug("key collision for '%s' at index %d: %s != %s; rotation difference = %d" % (cipher_word, i, key_char, ch, ev))
 
             if try_new_rotation_offset:
                 if of == 26:
@@ -291,8 +291,9 @@ def doit(cipher):
     return key
 
 # Initialize position offsets to zero and create a list of tuples
-cipher = list(zip(cipher_list, 'congratulationsyouareacry'))
-#cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareacryptog'))
+#cipher = list(zip(cipher_list, 'westseventysixdegreesfiftyonepoint'))
+cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
 #cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
