@@ -128,6 +128,7 @@ def doit(cipher):
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
     known_rotation_offsets = find_known_rotation_offsets(cipher)
+    last_key_collision = [None] * len(cipher)
 
     i = 0
     backtrack_loop_count = 0
@@ -170,11 +171,12 @@ def doit(cipher):
                     if i == backtrack_index:
                         # We are already at the first occurrence of the most recent guessed word
                         if 'expected_value' in backtrack_status:
+                            logging.debug("expectedval ccount %d" % backtrack_status['collision_count'])
                             of = backtrack_status['expected_value']
                             logging.debug("Set rotation for %s to calculated value %d" % (cipher_word, of))
 
                             #
-                            # Need` to remove the current key from list of guessed keys for this and future frames
+                            # Need to remove the current key from list of guessed keys for this and future frames
                             # so we don't later try to increment a calculated rotation offset.. however, not sure
                             # if the last element on the list will always be the current word... hence the assert()
                             #
@@ -204,6 +206,15 @@ def doit(cipher):
                 #
                 backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
                 logging.debug("key collision for '%s' at index %d: %s != %s; rotation difference = %d" % (cipher_word, i, key_char, ch, ev))
+                l = last_key_collision[i]
+                if l and l['root_char'] == ch and l['key_char'] == key_char:
+                    l['count'] += 1
+                    logging.debug("**duplicate collision at index %d (count=%d)**" % (i, l['count']))
+                else:
+                    # Either no prior collision at this index, or a new one
+                    l = { 'root_char': ch, 'key_char': key_char, 'count': 1 }
+                    last_key_collision[i] = l
+                backtrack_status['collision_count'] = l['count']
 
             if try_new_rotation_offset:
                 if of == 26:
@@ -293,8 +304,8 @@ def doit(cipher):
 # Initialize position offsets to zero and create a list of tuples
 #cipher = list(zip(cipher_list, 'congratulationsyouareacryptog'))
 #cipher = list(zip(cipher_list, 'westseventysixdegreesfiftyonepoint'))
-cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
-#cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
+cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
