@@ -160,34 +160,17 @@ def doit(cipher):
                 if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
                     backtrack_index = backtrack_status['index']
                     if i == backtrack_index:
-                        of += 1
+                        of = backtrack_status['expected_value']
+                        logging.debug("Reached target index %d - setting rotation to %d" % (i, of))
                         try_new_rotation_offset = True
+                        assert(guessed_keys.pop() == cipher_word)
                     else:
                         pass  # Just keep going until we get to the target index
 
-                elif backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
-                    most_recent_guessed_word = guessed_keys[-1]
-                    backtrack_index = key[most_recent_guessed_word]['first_occurrence']
-                    if i == backtrack_index:
-                        # We are already at the first occurrence of the most recent guessed word
-                        if 'expected_value' in backtrack_status:
-                            logging.debug("expectedval ccount %d" % backtrack_status['collision_count'])
-                            of = backtrack_status['expected_value']
-                            logging.debug("Set rotation for %s to calculated value %d" % (cipher_word, of))
-
-                            #
-                            # Need to remove the current key from list of guessed keys for this and future frames
-                            # so we don't later try to increment a calculated rotation offset.. however, not sure
-                            # if the last element on the list will always be the current word... hence the assert()
-                            #
-                            assert(guessed_keys.pop() == cipher_word)
-                        else:
-                            # No expected_value - likely a DUPLICATE_KEY_VALUE - just try incrementing the rotation
-                            of += 1
-                        try_new_rotation_offset = True
-                    else:
-                        logging.debug("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
-                        backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
+                elif backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
+                    # Still need to figure out what to do in this case
+                    logging.info("Duplicate key value TBD")
+                    break
                 else:
                     logging.error("Unhandled backtrack status %d" % backtrack_status)
                     break
@@ -201,11 +184,15 @@ def doit(cipher):
 
                 #
                 # expected_value is what the rotation would need to be set to to make the current
-                # code word map to the current plaintext character. However, it is kinda meaningless
-                # except for (I think) the first occurrence of the cipher word..
+                # code word map to the current plaintext character.
+                # Need to backtrack to the first occurrence of the most recently guessed code word, and set
+                # its rotation to expected_value.
                 #
-                backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
+                most_recent_guessed_word = guessed_keys[-1]
+                backtrack_index = key[most_recent_guessed_word]['first_occurrence']
+                backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'expected_value': ev}
                 logging.debug("key collision for '%s' at index %d: %s != %s; rotation difference = %d" % (cipher_word, i, key_char, ch, ev))
+                logging.debug("need to backtrack to index %d (first occurrence of word %s)" % (backtrack_index, most_recent_guessed_word))
                 l = last_key_collision[i]
                 if l and l['root_char'] == ch and l['key_char'] == key_char:
                     l['count'] += 1
