@@ -83,15 +83,16 @@ def decryptit(cipher_list, key):
             if foo != None:
                 key[foo]['root_char'] = chr(a + ord('a'))
 
-    key_list = build_key_list(key)
+    k = key.copy()
+    key_list = build_key_list(k)
     plaintext = ""
     for word in cipher_list:
-        if word in key:
-            rot = key[word]['rotation']
-            plaintext += key[word]['root_char']
+        if word in k:
+            rot = k[word]['rotation']
+            plaintext += k[word]['root_char']
             if rot > 0:
                 key_list = rotate(key_list, rot)
-                reassign_key_letters(key, key_list)
+                reassign_key_letters(k, key_list)
         else:
             print("word", word, "not in key - finishing")
             break
