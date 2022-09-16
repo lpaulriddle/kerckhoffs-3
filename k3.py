@@ -230,7 +230,7 @@ def doit(cipher):
         #          Pretty sure this just means we need to backtrack, but we'll see
         #
         elif key_char in used_key_chars:
-            logging.debug("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
+            logging.debug("duplicate key_val %c at index %d (orig %c offset %d)" % (key_char, i, plaintext_char, current_rotation))
             #logging.debug("key values: %s" % [a['root_char'] for a in key.values()])
             #logging.debug("used keys:  %s" % used_key_chars)
 
@@ -315,7 +315,7 @@ def doit(cipher):
 #cipher = list(zip(cipher_list, 'westseventysixdegreesfiftyonepoint'))
 #cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
 #cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
-cipher = list(zip(cipher_list, 'congratulationsyouarea'))
+cipher = list(zip(cipher_list, 'congratulationsyouareacr'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
