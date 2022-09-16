@@ -18,9 +18,8 @@
 # Getting iteration correct without infinite loops
 # Python debugger
 
-import hashlib
 import logging
-import random
+import string
 import sys
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s', stream=sys.stdout)
@@ -230,9 +229,24 @@ def doit(cipher):
         # State 2: duplicate key_val (key[a] and key[b] both map to the same letter)
         #          Pretty sure this just means we need to backtrack, but we'll see
         #
-        elif key_char in [a['root_char'] for a in key.values()]:
+        elif key_char in used_key_chars:
             logging.debug("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
             backtrack_status = { 'reason': DUPLICATE_KEY_VALUE }
+            #logging.debug("key values: %s" % [a['root_char'] for a in key.values()])
+            #logging.debug("used keys:  %s" % used_key_chars)
+
+            #
+            # Not sure of best approach here. Starting out by just picking the first available unused
+            # character, computing the offset, and backtracking. Seems kind of arbitrary, though..
+            #
+            for ch in string.ascii_lowercase:
+                if ch not in used_key_chars:
+                    break
+            else:
+                logging.error("No unused key characters found")
+                break
+            ev = (ord(key_char) - ord(ch)) % 26
+            logging.debug("first unused key character = '%s'; rotation difference = %d" % (ch, ev))
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
