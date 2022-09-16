@@ -231,7 +231,6 @@ def doit(cipher):
         #
         elif key_char in used_key_chars:
             logging.debug("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
-            backtrack_status = { 'reason': DUPLICATE_KEY_VALUE }
             #logging.debug("key values: %s" % [a['root_char'] for a in key.values()])
             #logging.debug("used keys:  %s" % used_key_chars)
 
@@ -247,9 +246,13 @@ def doit(cipher):
                 break
             ev = (ord(key_char) - ord(ch)) % 26
             logging.debug("first unused key character = '%s'; rotation difference = %d" % (ch, ev))
+            most_recent_guessed_word = guessed_keys[-1]
+            backtrack_index = key[most_recent_guessed_word]['first_occurrence']
+            backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'expected_value': ev}
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
+        
         #
         else:
 
