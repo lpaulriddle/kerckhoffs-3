@@ -23,7 +23,7 @@ import logging
 import random
 import sys
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s', stream=sys.stdout)
 
 # Backtracking reasons
 (KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX) = range(3)
@@ -126,6 +126,7 @@ def doit(cipher):
 #        key[thing] = { 'root_char': key[thing], 'rotation': ones }
     key = {}
     guessed_keys = []           # list of guessed cipher words in order of first appearance
+    used_key_chars = []
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
     known_rotation_offsets = find_known_rotation_offsets(cipher)
@@ -249,6 +250,7 @@ def doit(cipher):
             else:
                 guessed_keys.append(cipher_word)
             key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
+            used_key_chars.append(key_char)
 
         #
         # Backtrack if needed; otherwise, save state and keep going
@@ -257,7 +259,8 @@ def doit(cipher):
             state_vars = {
                 'start_rotation': start_rotation,
                 'key': key.copy(),
-                'guessed_keys': guessed_keys.copy()
+                'guessed_keys': guessed_keys.copy(),
+                'used_key_chars': used_key_chars.copy()
             }
             logging.debug("state_vars: %s" % state_vars)
             state.append(state_vars)
@@ -275,6 +278,7 @@ def doit(cipher):
             d = state.pop()
             start_rotation = d['start_rotation']
             guessed_keys = d['guessed_keys']
+            used_key_chars = d['used_key_chars']
             current_rotation = start_rotation
             key = d['key']
 
@@ -293,7 +297,8 @@ def doit(cipher):
 #cipher = list(zip(cipher_list, 'congratulationsyouareacryptog'))
 #cipher = list(zip(cipher_list, 'westseventysixdegreesfiftyonepoint'))
 #cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
-cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
+#cipher = list(zip(cipher_list, 'congratulationsyouareacrypt'))
+cipher = list(zip(cipher_list, 'congratulationsyouarea'))
 #cipher = list(zip(cipher_list, 'thecache'))
 key = doit(cipher)
 print(decryptit(cipher_list, key))
