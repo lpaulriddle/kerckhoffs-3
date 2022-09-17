@@ -238,7 +238,15 @@ def doit(cipher):
             # Not sure of best approach here. Starting out by just picking the first available unused
             # character, computing the offset, and backtracking. Seems kind of arbitrary, though..
             #
-            for ch in string.ascii_lowercase:
+            #for ch in string.ascii_lowercase:
+            #
+            # This code mimics the behavior of the original algorithm, which just increments the offset,
+            # effectively iterating backwards through the alphabet starting with the previous letter.
+            # Probably not any more correct, but useful for comparison with original algorithm.
+            #
+            k = ord(key_char) - 97
+            for j in range(25, -1, -1):
+                ch = chr((j + k) % 26 + 97)
                 if ch not in used_key_chars:
                     break
             else:
