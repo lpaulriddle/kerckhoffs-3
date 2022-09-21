@@ -161,7 +161,7 @@ def doit(cipher):
                 if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
                     backtrack_index = backtrack_status['index']
                     if i == backtrack_index:
-                        of = backtrack_status['expected_value']
+                        of = backtrack_status['rotation_value']
                         logging.debug("Reached target index %d - setting rotation to %d" % (i, of))
                         try_new_rotation_offset = True
                         assert(guessed_keys.pop() == cipher_word)
@@ -184,14 +184,14 @@ def doit(cipher):
                 ev = (ord(key_char) - ord(ch)) % 26
 
                 #
-                # expected_value is what the rotation would need to be set to to make the current
+                # rotation_value is what the rotation would need to be set to to make the current
                 # code word map to the current plaintext character.
                 # Need to backtrack to the first occurrence of the most recently guessed code word, and set
-                # its rotation to expected_value.
+                # its rotation to rotation_value.
                 #
                 most_recent_guessed_word = guessed_keys[-1]
                 backtrack_index = key[most_recent_guessed_word]['first_occurrence']
-                backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'expected_value': ev}
+                backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'rotation_value': ev}
                 logging.debug("key collision for '%s' at index %d: %s != %s; rotation difference = %d" % (cipher_word, i, key_char, ch, ev))
                 logging.debug("need to backtrack to index %d (first occurrence of word %s)" % (backtrack_index, most_recent_guessed_word))
                 l = last_key_collision[i]
@@ -256,7 +256,7 @@ def doit(cipher):
             logging.debug("first unused key character = '%s'; rotation difference = %d" % (ch, ev))
             most_recent_guessed_word = guessed_keys[-1]
             backtrack_index = key[most_recent_guessed_word]['first_occurrence']
-            backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'expected_value': ev}
+            backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'rotation_value': ev}
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
