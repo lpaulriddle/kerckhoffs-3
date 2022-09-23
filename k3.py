@@ -281,6 +281,7 @@ def doit(cipher):
         # Backtrack if needed; otherwise, save state and keep going
         #
         if backtrack_status == None:
+            key[cipher_word]['most_recent_occurrence'] = i
             state_vars = {
                 'start_rotation': start_rotation,
                 'key': key.copy(),
