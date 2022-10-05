@@ -159,7 +159,7 @@ def doit(cipher):
             #
             if backtrack_status:
                 if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
-                    backtrack_index = backtrack_status['index']
+                    backtrack_index = backtrack_status['to_index']
                     if i == backtrack_index:
                         of = backtrack_status['rotation_value']
                         logging.debug("Reached target index %d - setting rotation to %d" % (i, of))
@@ -191,7 +191,7 @@ def doit(cipher):
                 #
                 most_recent_guessed_word = guessed_keys[-1]
                 backtrack_index = key[most_recent_guessed_word]['first_occurrence']
-                backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'rotation_value': ev}
+                backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'from_index': i, 'to_index': backtrack_index, 'rotation_value': ev }
                 logging.debug("key collision for '%s' at index %d: %s != %s; rotation difference = %d" % (cipher_word, i, key_char, ch, ev))
                 logging.debug("need to backtrack to index %d (first occurrence of word %s)" % (backtrack_index, most_recent_guessed_word))
                 l = last_key_collision[i]
@@ -216,7 +216,7 @@ def doit(cipher):
                     next_word = guessed_keys[-2]
                     next_index = key[next_word]['first_occurrence']
                     logging.debug("backtrack to index %d word %s (current index %d)" % (next_index, next_word, i))
-                    backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': next_index }
+                    backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'to_index': next_index }
                 else:
                     logging.debug("Try new rotation value %d for word %s" % (of, cipher_word))
                     k['rotation'] = of
@@ -256,7 +256,7 @@ def doit(cipher):
             logging.debug("first unused key character = '%s'; rotation difference = %d" % (ch, ev))
             most_recent_guessed_word = guessed_keys[-1]
             backtrack_index = key[most_recent_guessed_word]['first_occurrence']
-            backtrack_status = {'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index, 'rotation_value': ev}
+            backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'from_index': i, 'to_index': backtrack_index, 'rotation_value': ev }
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
