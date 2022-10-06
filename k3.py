@@ -166,7 +166,10 @@ def doit(cipher):
                         try_new_rotation_offset = True
                         assert(guessed_keys.pop() == cipher_word)
                     else:
-                        pass  # Just keep going until we get to the target index
+                        (prev_cipher_word, prev_plaintext_char) = cipher[backtrack_status['from_index']]
+                        if cipher_word == prev_cipher_word:
+                            needed_rot = (ord(prev_plaintext_char) - ord(plaintext_char)) % 26
+                            logging.debug("Backtracked past myself word %s index %d pt chars %s, %s needed_rot %d" % (cipher_word, i, plaintext_char, prev_plaintext_char, needed_rot))
 
                 elif backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
                     # Still need to figure out what to do in this case
