@@ -158,26 +158,18 @@ def doit(cipher):
             # If we got here after backtracking, check what happened and figure out what to do
             #
             if backtrack_status:
-                if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
-                    backtrack_index = backtrack_status['to_index']
-                    if i == backtrack_index:
-                        of = backtrack_status['rotation_value']
-                        logging.debug("Reached target index %d - setting rotation to %d" % (i, of))
-                        try_new_rotation_offset = True
-                        assert(guessed_keys.pop() == cipher_word)
-                    else:
-                        (prev_cipher_word, prev_plaintext_char) = cipher[backtrack_status['from_index']]
-                        if cipher_word == prev_cipher_word:
-                            needed_rot = (ord(prev_plaintext_char) - ord(plaintext_char)) % 26
-                            logging.debug("Backtracked past myself word %s index %d pt chars %s, %s needed_rot %d" % (cipher_word, i, plaintext_char, prev_plaintext_char, needed_rot))
-
-                elif backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
-                    # Still need to figure out what to do in this case
-                    logging.info("Duplicate key value TBD")
-                    break
+                backtrack_index = backtrack_status['to_index']
+                if i == backtrack_index:
+                    of = backtrack_status['rotation_value']
+                    logging.debug("Reached target index %d - setting rotation to %d" % (i, of))
+                    try_new_rotation_offset = True
+                    #if backtrack_status['reason'] != DUPLICATE_KEY_VALUE:
+                    assert(guessed_keys.pop() == cipher_word)
                 else:
-                    logging.error("Unhandled backtrack status %d" % backtrack_status)
-                    break
+                    (prev_cipher_word, prev_plaintext_char) = cipher[backtrack_status['from_index']]
+                    if cipher_word == prev_cipher_word:
+                        needed_rot = (ord(prev_plaintext_char) - ord(plaintext_char)) % 26
+                        logging.debug("Backtracked past myself word %s index %d pt chars %s, %s needed_rot %d" % (cipher_word, i, plaintext_char, prev_plaintext_char, needed_rot))
 
             #
             # Not backtracking: check for key collision (key[n] already set to something other than
@@ -259,7 +251,7 @@ def doit(cipher):
             logging.debug("first unused key character = '%s'; rotation difference = %d" % (ch, ev))
             most_recent_guessed_word = guessed_keys[-1]
             backtrack_index = key[most_recent_guessed_word]['first_occurrence']
-            backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'from_index': i, 'to_index': backtrack_index, 'rotation_value': ev }
+            backtrack_status = { 'reason': DUPLICATE_KEY_VALUE, 'from_index': i, 'to_index': backtrack_index, 'rotation_value': ev }
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
