@@ -116,6 +116,18 @@ def find_known_rotation_offsets(cipher):
     print("Calculated the following rotation offsets:", offsets)
     return offsets
 
+def get_frequencies(cipher):
+    indices = {}
+
+    i = 0
+    for (word, thing) in cipher:
+        if word in indices:
+            indices[word].append(i)
+        else:
+            indices[word] = [i]
+        i += 1
+    print("indices", indices)
+
 def doit(cipher):
     state = []
 #    key = { '652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f' }
@@ -130,6 +142,8 @@ def doit(cipher):
     start_rotation = current_rotation # first offset we tried before moving on to others
     known_rotation_offsets = find_known_rotation_offsets(cipher)
     last_key_collision = [None] * len(cipher)
+
+    get_frequencies(cipher)
 
     i = 0
     backtrack_loop_count = 0
@@ -163,8 +177,8 @@ def doit(cipher):
                     of = backtrack_status['rotation_value']
                     logging.debug("Reached target index %d - setting rotation to %d" % (i, of))
                     try_new_rotation_offset = True
-                    #if backtrack_status['reason'] != DUPLICATE_KEY_VALUE:
-                    assert(guessed_keys.pop() == cipher_word)
+                    if backtrack_status['reason'] != DUPLICATE_KEY_VALUE:
+                        assert(guessed_keys.pop() == cipher_word)
                 else:
                     (prev_cipher_word, prev_plaintext_char) = cipher[backtrack_status['from_index']]
                     if cipher_word == prev_cipher_word:
