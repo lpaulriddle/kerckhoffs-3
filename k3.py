@@ -342,10 +342,10 @@ def fit_plaintext(text, offset):
 
 #2023-01-20 16:22:49,679 - DEBUG - state_vars: {'start_rotation': 13, 'key': {'860': {'root_char': 'n', 'rotation': 0, 'first_occurrence': 0}, '96972': {'root_char': 'o', 'rotation': 0, 'first_occurrence': 1}, '781': {'root_char': 'r', 'rotation': 3, 'first_occurrence': 2}, '418': {'root_char': 'q', 'rotation': 9, 'first_occurrence': 3}, '871646': {'root_char': 'v', 'rotation': 1, 'first_occurrence': 4}, '243255912': {'root_char': 'g', 'rotation': 7, 'first_occurrence': 5}}, 'guessed_keys': ['860', '96972', '781', '418', '871646']}
 
-def build_keytest(text):
+def build_rotation_matrix(text):
     assert(len(text) <= len(cipher_list))
     cipher = cipher_list[:len(text)]
-    key = {}
+    last_occurrence_of = {}
     unique_words = list(set(cipher))
     unique_words.sort()
     print("cipher slice:", cipher)
@@ -354,15 +354,13 @@ def build_keytest(text):
     matrix = []
     for i in range(len(text)):
         word = cipher[i]
-        if word not in key:
-            key[word] = {'root_char': text[i], 'rotation': 0, 'first_occurrence': i, 'last_occurrence': i, 'known_value': False}
+        if word not in last_occurrence_of:
+            last_occurrence_of[word] = i
             continue
-        l = key[word]['last_occurrence']
+        l = last_occurrence_of[word]
         required_rot = (ord(text[i]) - ord(text[l])) % 26
         print("Required total rotation between %d and %d = %d" % (l, i, required_rot))
         sl = cipher[l:i]
-        #sl2 = [key[x]['rotation'] for x in sl]
-        #print("Slice", sl, "Rotations", sl2, "Sum", sum(sl2) % 26)
         print("Slice", sl)
 
         counts = {}
@@ -379,9 +377,8 @@ def build_keytest(text):
             matrix_row.append(0)
         matrix_row.append(required_rot)
         matrix.append(matrix_row)
-        key[word]['last_occurrence'] = i
+        last_occurrence_of[word] = i
         
-    print("initial key", key)
     print("unique words:", unique_words)
     print("key rotation matrix:")
     for i in matrix:
@@ -404,11 +401,11 @@ def build_keytest(text):
 #print(fit_plaintext('congratulationsyouare', 0))
 #print(fit_plaintext('norththirtynine', 0))
 
-text = 'congratulationsyouareacrypt'
+text = 'congratulationsyouareacryp'
 
-print(fit_plaintext(text, 0))
-#build_keytest('norththirtyninedegreestenpoint')
-#build_keytest('congratulationsyouareacryptogr')
+#build_rotation_matrix('norththirtyninedegreestenpoint')
+build_rotation_matrix('congratulationsyouareacryptogr')
+#print(fit_plaintext(text, 0))
 
 #matched_positions = []
 #eliminated_positions = [0, 245, 246, 327, 328, 329, 523, 524, 20, 37, 73, 100, 130, 161, 225, 244, 251, 253, 255, 292, 311, 332, 348, 401, 410, 436, 457, 475, 513, 515, 521, 522, 3, 15, 57, 83, 115, 153, 211, 219, 233, 243, 254, 291, 310, 325, 336, 345, 374, 383, 386, 389, 398, 416, 448, 459, 462, 464]
