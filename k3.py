@@ -309,6 +309,7 @@ def doit(cipher, known_rotation_offsets):
 def fit_plaintext(text, offset):
     # TBD: build_rotation_matrix() needs to handle the offset
     known_rotations = build_rotation_matrix(text)
+    return None
 
     cipher = list(zip(cipher_list[offset:], text))
     key = doit(cipher, known_rotations)
@@ -338,12 +339,11 @@ def fit_plaintext(text, offset):
         return p
     return None
 
-#2023-01-20 16:22:49,679 - DEBUG - state_vars: {'start_rotation': 13, 'key': {'860': {'root_char': 'n', 'rotation': 0, 'first_occurrence': 0}, '96972': {'root_char': 'o', 'rotation': 0, 'first_occurrence': 1}, '781': {'root_char': 'r', 'rotation': 3, 'first_occurrence': 2}, '418': {'root_char': 'q', 'rotation': 9, 'first_occurrence': 3}, '871646': {'root_char': 'v', 'rotation': 1, 'first_occurrence': 4}, '243255912': {'root_char': 'g', 'rotation': 7, 'first_occurrence': 5}}, 'guessed_keys': ['860', '96972', '781', '418', '871646']}
-
 def build_rotation_matrix(text):
     def find_pivot(mat, start_row_index):
-        # Iterate through the columns
-        for col_num in range(len(mat[0])):
+        # Iterate through the columns (except for the RHS, which we don't want to
+        # ever use as a pivot)
+        for col_num in range(len(mat[0]) - 1):
             for row_num in range(start_row_index, len(mat)):
                 if mat[row_num][col_num] != 0:
                     print("Found pivot (%d,%d)" % (row_num, col_num))
@@ -403,8 +403,8 @@ def build_rotation_matrix(text):
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
         for row in matrix:
-            l = [(mult, word) for (mult, word) in zip(row, words) if mult > 0]
-            print("non-zero multipliers:", l)
+            l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
+            print("non-zero multipliers:", l, "=>", row[-1])
             # TBD: handle rows with multiple entries in the backtracking algo somehow
             if len(l) == 1:
                 (mult, word) = l[0]
@@ -457,23 +457,9 @@ def build_rotation_matrix(text):
     print("Computed rotations", known_rotations)
     return(known_rotations)
 
-# Initialize position offsets to zero and create a list of tuples
-#cipher = list(zip(cipher_list, 'congratulationsyouareacryptog'))
-#cipher = list(zip(cipher_list, 'westseventysixdegreesfiftyonepoint'))
-#cipher = list(zip(cipher_list, 'congratulationsyouareacryp'))
-
-#cipher = list(zip(cipher_list[1:], 'oneckcheckulationsyouarea'))
-#cipher = list(zip(cipher_list, 'norththirty'))
-#cipher = list(zip(cipher_list, 'norththirtyninedegrees'))
-
-#cipher = list(zip(cipher_list, 'thecache'))
-#key = doit(cipher, 0)
-#print(decryptit(cipher_list[1:], key))
-
-#print(fit_plaintext('congratulationsyouare', 0))
-#print(fit_plaintext('norththirtynine', 0))
-
-text = 'congratulationsyouareacryptogr'
+#text = 'congratulationsyouareacryptogr'
+#text = 'congratulationsyouareacryptographerext'
+text = 'congratulationsyouareacryptographerextr'
 
 #build_rotation_matrix('norththirtyninedegreestenpoint')
 print(fit_plaintext(text, 0))
