@@ -102,34 +102,29 @@ def decryptit(cipher_list, key):
 #
 # Figure out what offsets we can, based on the plaintext we're trying to fit
 #
-def find_known_rotation_offsets(cipher):
-    offsets = {}
+#def find_known_rotation_offsets(cipher):
+#    offsets = {}
+#
+#    #
+#    # TBD: compute offsets for words that lie between two words with known offsets
+#    # E.g. if we know offset for 5555, and sequence is 5555 4444 5555, we should
+#    # be able to compute 4444
+#    #
+#    for i in range(len(cipher) - 1):
+#        if cipher[i][0] == cipher[i + 1][0]:
+#            rot = (ord(cipher[i+1][1]) - ord(cipher[i][1])) % 26
+#            offsets[cipher[i][0]] = rot
+#
+#    print("Calculated the following rotation offsets:", offsets)
+#    return offsets
 
-    #
-    # TBD: compute offsets for words that lie between two words with known offsets
-    # E.g. if we know offset for 5555, and sequence is 5555 4444 5555, we should
-    # be able to compute 4444
-    #
-    for i in range(len(cipher) - 1):
-        if cipher[i][0] == cipher[i + 1][0]:
-            rot = (ord(cipher[i+1][1]) - ord(cipher[i][1])) % 26
-            offsets[cipher[i][0]] = rot
-
-    print("Calculated the following rotation offsets:", offsets)
-    return offsets
-
-def doit(cipher):
+def doit(cipher, known_rotation_offsets):
     state = []
-#    key = { '652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f' }
-#    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
-#    for thing in key.keys():
-#        ones = int(thing) % 10
-#        key[thing] = { 'root_char': key[thing], 'rotation': ones }
     key = {}
     guessed_keys = []           # list of guessed cipher words in order of first appearance
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
-    known_rotation_offsets = find_known_rotation_offsets(cipher)
+    #known_rotation_offsets = find_known_rotation_offsets(cipher)
     last_key_collision = [None] * len(cipher)
 
     i = 0
@@ -312,8 +307,11 @@ def doit(cipher):
 
 
 def fit_plaintext(text, offset):
+    # TBD: build_rotation_matrix() needs to handle the offset
+    known_rotations = build_rotation_matrix(text)
+
     cipher = list(zip(cipher_list[offset:], text))
-    key = doit(cipher)
+    key = doit(cipher, known_rotations)
     if key != None:
         p = decryptit(cipher_list[offset:], key)
 
@@ -343,6 +341,80 @@ def fit_plaintext(text, offset):
 #2023-01-20 16:22:49,679 - DEBUG - state_vars: {'start_rotation': 13, 'key': {'860': {'root_char': 'n', 'rotation': 0, 'first_occurrence': 0}, '96972': {'root_char': 'o', 'rotation': 0, 'first_occurrence': 1}, '781': {'root_char': 'r', 'rotation': 3, 'first_occurrence': 2}, '418': {'root_char': 'q', 'rotation': 9, 'first_occurrence': 3}, '871646': {'root_char': 'v', 'rotation': 1, 'first_occurrence': 4}, '243255912': {'root_char': 'g', 'rotation': 7, 'first_occurrence': 5}}, 'guessed_keys': ['860', '96972', '781', '418', '871646']}
 
 def build_rotation_matrix(text):
+    def find_pivot(mat, start_row_index):
+        # Iterate through the columns
+        for col_num in range(len(mat[0])):
+            for row_num in range(start_row_index, len(mat)):
+                if mat[row_num][col_num] != 0:
+                    print("Found pivot (%d,%d)" % (row_num, col_num))
+                    return (row_num, col_num)
+        print("No pivot found")
+        return (None, None)
+
+    def gauss_jordan_reduce(mat):
+        for row_index in range(len(mat)):
+            (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
+            if pivot_row_index == None:
+                break
+            assert(pivot_row_index >= row_index)
+            if pivot_row_index > row_index:
+                print("swap rows %d and %d" % (row_index, pivot_row_index))
+                temp = mat[row_index]
+                mat[row_index] = mat[pivot_row_index]
+                mat[pivot_row_index] = temp
+                print("matrix now", mat)
+
+            pivot_val = mat[row_index][pivot_col_index]
+
+            #
+            # Transform row to make pivot equal 1
+            # This also converts everything to floating point
+            #
+            mat[row_index] = [i / pivot_val for i in mat[row_index]]
+
+            #
+            # Transform other rows so that everything else in the pivot column is zero
+            #
+            pivot_row = mat[row_index]
+            pivot_row[-1] %= 26
+            print("Pivot row: %s; first nonzero index: %d" % (pivot_row, pivot_col_index))
+            for secondary_row_index in range(0, len(mat)):
+                if secondary_row_index == row_index:
+                    continue
+                secondary_row = mat[secondary_row_index]
+
+                #
+                # Most of the numbers in the matrix represent code word frequencies, not
+                # rotation values, so should not be taken modulo 26. The exception is the
+                # final row in the matrix, which is the RHS of that row's equation.
+                #
+                if secondary_row[pivot_col_index] != 0:
+                    row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
+                    new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
+                    new_row[-1] %= 26
+                    print("new_row %s" % new_row)
+                    mat[secondary_row_index] = new_row
+
+            print("Subsequent rows: %s" % mat[row_index+1:])
+            print("After %d iteration(s), matrix now:" % (row_index+1))
+            for i in mat:
+                print(' '.join(['{:-4.1f}'.format(x) for x in i]))
+
+    def get_computed_codeword_rotations(matrix, words):
+        rotations = {}
+        for row in matrix:
+            l = [(mult, word) for (mult, word) in zip(row, words) if mult > 0]
+            print("non-zero multipliers:", l)
+            # TBD: handle rows with multiple entries in the backtracking algo somehow
+            if len(l) == 1:
+                (mult, word) = l[0]
+                # multiplier should always be 1 for a matrix in reduced row echelon form.
+                # anything else means we have a bug
+                assert(mult == 1.0)
+                assert(row[-1].is_integer())   # Can't have a fractional rotation value
+                rotations[word] = int(row[-1])
+        return(rotations)
+
     assert(len(text) <= len(cipher_list))
     cipher = cipher_list[:len(text)]
     last_occurrence_of = {}
@@ -380,10 +452,10 @@ def build_rotation_matrix(text):
         last_occurrence_of[word] = i
         
     print("unique words:", unique_words)
-    print("key rotation matrix:")
-    for i in matrix:
-        print(i)
-    #print(decryptit(cipher_list, key))
+    gauss_jordan_reduce(matrix)
+    known_rotations = get_computed_codeword_rotations(matrix, unique_words)
+    print("Computed rotations", known_rotations)
+    return(known_rotations)
 
 # Initialize position offsets to zero and create a list of tuples
 #cipher = list(zip(cipher_list, 'congratulationsyouareacryptog'))
@@ -401,11 +473,10 @@ def build_rotation_matrix(text):
 #print(fit_plaintext('congratulationsyouare', 0))
 #print(fit_plaintext('norththirtynine', 0))
 
-text = 'congratulationsyouareacryp'
+text = 'congratulationsyouareacryptogr'
 
 #build_rotation_matrix('norththirtyninedegreestenpoint')
-build_rotation_matrix('congratulationsyouareacryptogr')
-#print(fit_plaintext(text, 0))
+print(fit_plaintext(text, 0))
 
 #matched_positions = []
 #eliminated_positions = [0, 245, 246, 327, 328, 329, 523, 524, 20, 37, 73, 100, 130, 161, 225, 244, 251, 253, 255, 292, 311, 332, 348, 401, 410, 436, 457, 475, 513, 515, 521, 522, 3, 15, 57, 83, 115, 153, 211, 219, 233, 243, 254, 291, 310, 325, 336, 345, 374, 383, 386, 389, 398, 416, 448, 459, 462, 464]
