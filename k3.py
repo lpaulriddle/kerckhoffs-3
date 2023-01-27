@@ -351,7 +351,7 @@ def build_rotation_matrix(text):
         print("No pivot found")
         return (None, None)
 
-    def gauss_jordan_reduce(mat):
+    def gauss_jordan_reduce(mat, words):
         for row_index in range(len(mat)):
             (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
             if pivot_row_index == None:
@@ -362,7 +362,7 @@ def build_rotation_matrix(text):
                 temp = mat[row_index]
                 mat[row_index] = mat[pivot_row_index]
                 mat[pivot_row_index] = temp
-                print("matrix now", mat)
+                #print("matrix now", mat)
 
             pivot_val = mat[row_index][pivot_col_index]
 
@@ -392,12 +392,12 @@ def build_rotation_matrix(text):
                     row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
                     new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
                     new_row[-1] %= 26
-                    print("new_row %s" % new_row)
+                    #print("new_row %s" % new_row)
                     mat[secondary_row_index] = new_row
 
-            print("Subsequent rows: %s" % mat[row_index+1:])
+            #print("Subsequent rows: %s" % mat[row_index+1:])
             print("After %d iteration(s), matrix now:" % (row_index+1))
-            print_matrix(mat)
+            print_matrix(mat, words)
 
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
@@ -414,9 +414,14 @@ def build_rotation_matrix(text):
                 rotations[word] = int(row[-1])
         return(rotations)
 
-    def print_matrix(mat):
+    def print_matrix(mat, unique_words):
         for i in mat:
-            print(' '.join(['{:-4.1f}'.format(x) for x in i]))
+            zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
+            words = [w for (w,x) in zthing]
+            total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
+            print(' '.join(['{:-4.1f}'.format(x) for x in i]), total, words)
+            if total != i[-1]:
+                print("aah.. no..")
 
     assert(len(text) <= len(cipher_list))
     cipher = cipher_list[:len(text)]
@@ -456,15 +461,15 @@ def build_rotation_matrix(text):
         
     print("unique words:", unique_words)
     print("Initial matrix:")
-    print_matrix(matrix)
-    gauss_jordan_reduce(matrix)
+    print_matrix(matrix, unique_words)
+    gauss_jordan_reduce(matrix, unique_words)
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
     print("Computed rotations", known_rotations)
     return(known_rotations)
 
 #text = 'congratulationsyouareacryptogr'
 #text = 'congratulationsyouareacryptographerext'
-text = 'congratulationsyouareacryptographerextraordi'
+text = 'congratulationsyouareacryptographerextraordin'
 
 #build_rotation_matrix('norththirtyninedegreestenpoint')
 print(fit_plaintext(text, 0))
