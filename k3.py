@@ -365,6 +365,8 @@ def build_rotation_matrix(text):
                 #print("matrix now", mat)
 
             pivot_val = mat[row_index][pivot_col_index]
+            if pivot_val < 0:
+                print(f"**Negative pivot val {pivot_val}")
 
             #
             # Transform row to make pivot equal 1
@@ -390,7 +392,9 @@ def build_rotation_matrix(text):
                 #
                 if secondary_row[pivot_col_index] != 0:
                     row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
+                    #print(f"row_mult for row {secondary_row_index:2} = {row_mult}")
                     new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
+                    #print(f"modified row {secondary_row_index:2}     = {new_row}")
                     new_row[-1] %= 26
                     #print("new_row %s" % new_row)
                     mat[secondary_row_index] = new_row
@@ -415,13 +419,15 @@ def build_rotation_matrix(text):
         return(rotations)
 
     def print_matrix(mat, unique_words):
+        line_no = 0
         for i in mat:
             zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
             words = [w for (w,x) in zthing]
             total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
-            print(' '.join(['{:-4.1f}'.format(x) for x in i]), total, words)
+            print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '{:4.1f}'.format(total), words)
             if total != i[-1]:
                 print("aah.. no..")
+            line_no += 1
 
     assert(len(text) <= len(cipher_list))
     cipher = cipher_list[:len(text)]
