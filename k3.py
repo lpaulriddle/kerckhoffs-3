@@ -397,8 +397,7 @@ def build_rotation_matrix(text):
 
             print("Subsequent rows: %s" % mat[row_index+1:])
             print("After %d iteration(s), matrix now:" % (row_index+1))
-            for i in mat:
-                print(' '.join(['{:-4.1f}'.format(x) for x in i]))
+            print_matrix(mat)
 
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
@@ -414,6 +413,10 @@ def build_rotation_matrix(text):
                 assert(row[-1].is_integer())   # Can't have a fractional rotation value
                 rotations[word] = int(row[-1])
         return(rotations)
+
+    def print_matrix(mat):
+        for i in mat:
+            print(' '.join(['{:-4.1f}'.format(x) for x in i]))
 
     assert(len(text) <= len(cipher_list))
     cipher = cipher_list[:len(text)]
@@ -452,6 +455,8 @@ def build_rotation_matrix(text):
         last_occurrence_of[word] = i
         
     print("unique words:", unique_words)
+    print("Initial matrix:")
+    print_matrix(matrix)
     gauss_jordan_reduce(matrix)
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
     print("Computed rotations", known_rotations)
@@ -459,7 +464,7 @@ def build_rotation_matrix(text):
 
 #text = 'congratulationsyouareacryptogr'
 #text = 'congratulationsyouareacryptographerext'
-text = 'congratulationsyouareacryptographerextr'
+text = 'congratulationsyouareacryptographerextraordi'
 
 #build_rotation_matrix('norththirtyninedegreestenpoint')
 print(fit_plaintext(text, 0))
