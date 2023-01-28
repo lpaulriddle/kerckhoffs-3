@@ -307,8 +307,7 @@ def doit(cipher, known_rotation_offsets):
 
 
 def fit_plaintext(text, offset):
-    # TBD: build_rotation_matrix() needs to handle the offset
-    known_rotations = build_rotation_matrix(text)
+    known_rotations = build_rotation_matrix(text, offset)
     return None
 
     cipher = list(zip(cipher_list[offset:], text))
@@ -339,7 +338,7 @@ def fit_plaintext(text, offset):
         return p
     return None
 
-def build_rotation_matrix(text):
+def build_rotation_matrix(text, offset):
     def find_pivot(mat, start_row_index):
         # Iterate through the columns (except for the RHS, which we don't want to
         # ever use as a pivot)
@@ -438,8 +437,8 @@ def build_rotation_matrix(text):
                 print("aah.. no..")
             line_no += 1
 
-    assert(len(text) <= len(cipher_list))
-    cipher = cipher_list[:len(text)]
+    assert(len(text) <= len(cipher_list) - offset)
+    cipher = cipher_list[offset:len(text) + offset]
     last_occurrence_of = {}
     unique_words = list(set(cipher))
     unique_words.sort()
@@ -485,8 +484,6 @@ def build_rotation_matrix(text):
 #text = 'congratulationsyouareacryptogr'
 #text = 'congratulationsyouareacryptographerext'
 text = 'congratulationsyouareacryptographerextraordinaire'
-
-#build_rotation_matrix('norththirtyninedegreestenpoint')
 print(fit_plaintext(text, 0))
 
 #matched_positions = []
