@@ -365,6 +365,12 @@ def build_rotation_matrix(text):
                 #print("matrix now", mat)
 
             pivot_val = mat[row_index][pivot_col_index]
+
+            #
+            # One of the "gotchas" of taking everything (mod 26) is that we need to
+            # make sure the values in the rightmost column are positive before
+            # dividing them by anything, or "bad things will happen"(tm)
+            #
             if pivot_val < 0:
                 print(f"**Negative pivot val {pivot_val}")
                 mat[row_index] = [-x for x in mat[row_index]]
