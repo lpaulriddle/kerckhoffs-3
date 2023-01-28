@@ -367,6 +367,9 @@ def build_rotation_matrix(text):
             pivot_val = mat[row_index][pivot_col_index]
             if pivot_val < 0:
                 print(f"**Negative pivot val {pivot_val}")
+                mat[row_index] = [-x for x in mat[row_index]]
+                pivot_val = -pivot_val
+                mat[row_index][-1] %= 26
 
             #
             # Transform row to make pivot equal 1
@@ -475,7 +478,7 @@ def build_rotation_matrix(text):
 
 #text = 'congratulationsyouareacryptogr'
 #text = 'congratulationsyouareacryptographerext'
-text = 'congratulationsyouareacryptographerextraordin'
+text = 'congratulationsyouareacryptographerextraordinaire'
 
 #build_rotation_matrix('norththirtyninedegreestenpoint')
 print(fit_plaintext(text, 0))
