@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 #
 # North Thirty Nine Degrees Ten Point and West Seventy Six Degrees Fifty One Point
 # norththirtyninedegreestenpoint
@@ -19,11 +19,14 @@
 # Python debugger
 
 import hashlib
+import logging
 import random
+import sys
 
-# Key entry types
-(GUESSED, CALCULATED) = range(2)
-(KEY_ROTATION_COLLISION, DEAD_END, BACKTRACK_TO_INDEX) = range(3)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stderr)
+
+# Backtracking reasons
+(KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX) = range(3)
 
 # K1
 #cipher_words = ['89411894', '4254', '7171031', '4502', '971559793', '53177', '636187', '20', '4504', '376', '361', '57643', '85053600', '29', '7004062', '4468', '923921735', '946320122', '930424404', '88527391', '692473', '84524991', '87445918', '638440', '23', '52381']
@@ -50,7 +53,8 @@ while i < len(cipher_text) - 1:
             break
     i = j
 
-print("cipher_list", cipher_list)
+print("cipher_list:", cipher_list)
+print("Cipher length =", len(cipher_list))
 
 #
 # Make sure we have a match
@@ -80,32 +84,51 @@ def decryptit(cipher_list, key):
             if foo != None:
                 key[foo]['root_char'] = chr(a + ord('a'))
 
-    key_list = build_key_list(key)
+    k = key.copy()
+    key_list = build_key_list(k)
     plaintext = ""
     for word in cipher_list:
-        if word in key:
-            rot = key[word]['rotation']
-            plaintext += key[word]['root_char']
+        if word in k:
+            rot = k[word]['rotation']
+            plaintext += k[word]['root_char']
             if rot > 0:
                 key_list = rotate(key_list, rot)
-                reassign_key_letters(key, key_list)
+                reassign_key_letters(k, key_list)
         else:
             print("word", word, "not in key - finishing")
             break
     return plaintext
 
-def doit(cipher):
+#
+# Figure out what offsets we can, based on the plaintext we're trying to fit
+#
+#def find_known_rotation_offsets(cipher):
+#    offsets = {}
+#
+#    #
+#    # TBD: compute offsets for words that lie between two words with known offsets
+#    # E.g. if we know offset for 5555, and sequence is 5555 4444 5555, we should
+#    # be able to compute 4444
+#    #
+#    for i in range(len(cipher) - 1):
+#        if cipher[i][0] == cipher[i + 1][0]:
+#            rot = (ord(cipher[i+1][1]) - ord(cipher[i][1])) % 26
+#            offsets[cipher[i][0]] = rot
+#
+#    print("Calculated the following rotation offsets:", offsets)
+#    return offsets
+
+def doit(cipher, known_rotation_offsets):
     state = []
-#    key = {'652655': 'c', '21': 'j', '7073281': 'h', '7614435': 'z', '55709': 'f', '7954481': 'p', '89447709': 'l', '4045': 'v', '50461': 'w', '641971': 'a', '59207': 'm', '7811539': 'i', '7699855': 'q', '52123': 'y', '308': 'r', '391': 'b', '945432286': 'k', '7756659': 'n', '605858': 't', '7906967': 'd', '920376451': 's', '20': 'g', '338': 'u', '7080686': 'e', '341': 'o', '4530': 'x'}
-#    for thing in key.keys():
-#        ones = int(thing) % 10
-#        key[thing] = (key[thing], ones)
     key = {}
+    guessed_keys = []           # list of guessed cipher words in order of first appearance
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
+    #known_rotation_offsets = find_known_rotation_offsets(cipher)
+    last_key_collision = [None] * len(cipher)
 
     i = 0
-    loop_count = 0   # temp so we can break out of infinite loops
+    backtrack_loop_count = 0
     backtrack_status = None
 
     #
@@ -115,11 +138,12 @@ def doit(cipher):
     while i < len(cipher):
         (cipher_word, plaintext_char) = cipher[i]
         key_char = chr((ord(plaintext_char) - ord('a') - current_rotation) % 26 + ord('a'))
+        try_new_rotation_offset = False
 
-        print("index %d word %s cur_char %c key_char %c current_rotation %d key" % (i, cipher_word, plaintext_char, key_char, current_rotation), key)
+        logging.debug("index %d word %s plaintext_char %c key_char %c current_rotation %d key %s" % (i, cipher_word, plaintext_char, key_char, current_rotation, key))
 
         #
-        # State 1: cipher is present in key
+        # State 1: cipher word is present in key
         #
         if cipher_word in key:
             k = key[cipher_word]
@@ -131,75 +155,84 @@ def doit(cipher):
             #
             if backtrack_status:
                 if backtrack_status['reason'] == BACKTRACK_TO_INDEX:
-                    target_index = backtrack_status['index']
-                    if i == target_index:
-                        print("Finished backtracking to index", i)
-                        backtrack_status = None
-                    else:
-                        print("Still backtracking to index", i)
-
-                elif backtrack_status['reason'] == KEY_ROTATION_COLLISION:
-                    print("Last iteration was key collision")
-
-                    #
-                    # We can only be sure about offsets for consecutive values of the same word
-                    # (or, eventually, where all intervening keys also have calculated values)
-                    #
-                    if k['source'] == GUESSED and backtrack_status['last_word'] == cipher_word:
-                        r = backtrack_status['expected_value']
-                        print("Assign calculated rotation offset for %s to %d" % (cipher_word, r))
-                        of = r
-                        k['rotation'] = of
-                        k['source'] = CALCULATED
-                        if i == k['first_occurrence']:
-                            backtrack_status = None
-                        else:
-                            print("Need to spool back to first occurrence of %s (%d)" % (cipher_word, k['first_occurrence']))
-                            backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': k['first_occurrence'] }
-
-                    else:
-
-                        #
-                        # Collision after calculating the rotation - dead end - keep backtracking
-                        # until we find a key with a guessed rotation value
-                        # NOTE- eventually need to work through keys in reverse order of occurrence in the cipher,
-                        # backtracking to the first occurrence of each key..
-                        # As of Python3.7, we can rely on keys() to return the keys in order of insertion
-                        # so, just need to keep track of first occurrence index of each key
-                        #
-                        print("key rotation error for %s with calculated rotation value %d - dead end" % (cipher_word, of))
-                        backtrack_status = { 'reason': DEAD_END }
-
-                elif backtrack_status['reason'] == DEAD_END:
-                    if k['source'] == GUESSED:
+                    backtrack_index = backtrack_status['index']
+                    if i == backtrack_index:
                         of += 1
-                        if of == 26:
-                            # We've run through all possible rotation values, so need to backtrack again
-                            print("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
-                        else:
-                            print("Trying new rotation value %d for word %s" % (of, cipher_word))
-                            k['rotation'] = of
-                            if i == k['first_occurrence']:
-                                backtrack_status = None
-                            else:
-                                print("Need to spool back to first occurrence of %s (%d)" % (cipher_word, k['first_occurrence']))
-                                backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': k['first_occurrence'] }
+                        try_new_rotation_offset = True
                     else:
-                        # Not a guessed rotation offset- fall through and keep backtracking
-                        pass
+                        pass  # Just keep going until we get to the target index
 
+                elif backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
+                    if len(guessed_keys) < 1:
+                        # This can happen if the only remaining keys were pre-calculated
+                        logging.debug("No more guessed keys remain")
+                        break
+                    most_recent_guessed_word = guessed_keys[-1]
+                    backtrack_index = key[most_recent_guessed_word]['first_occurrence']
+                    if i == backtrack_index:
+                        # We are already at the first occurrence of the most recent guessed word
+                        if 'expected_value' in backtrack_status:
+                            of = backtrack_status['expected_value']
+                            logging.debug("Set rotation for %s to calculated value %d" % (cipher_word, of))
+
+                            #
+                            # Need to remove the current key from list of guessed keys for this and future frames
+                            # so we don't later try to increment a calculated rotation offset.. however, not sure
+                            # if the last element on the list will always be the current word... hence the assert()
+                            #
+                            assert(guessed_keys.pop() == cipher_word)
+                        else:
+                            # No expected_value - likely a DUPLICATE_KEY_VALUE - just try incrementing the rotation
+                            of += 1
+                        try_new_rotation_offset = True
+                    else:
+                        logging.debug("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
+                        backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
                 else:
-                    print("Unhandled backtrack status", backtrack_status)
+                    logging.error("Unhandled backtrack status %d" % backtrack_status)
                     break
 
             #
             # Not backtracking: check for key collision (key[n] already set to something other than
-            # what we are trying to assign
+            # what we are trying to assign)
             #
             elif ch != key_char:
                 ev = (ord(key_char) - ord(ch)) % 26
-                backtrack_status = { 'reason': KEY_ROTATION_COLLISION, 'expected_value': ev, 'last_word': cipher_word }
-                print("key collision for '%s': %s != %s; rotation difference = %d" % (cipher_word, key_char, ch, ev))
+
+                #
+                # expected_value is what the rotation would need to be set to to make the current
+                # code word map to the current plaintext character. However, it is kinda meaningless
+                # except for (I think) the first occurrence of the cipher word..
+                #
+                backtrack_status = {'reason': KEY_ROTATION_COLLISION, 'expected_value': ev}
+                logging.debug("key collision for '%s' at index %d: %s != %s; rotation difference = %d" % (cipher_word, i, key_char, ch, ev))
+                l = last_key_collision[i]
+                if l and l['root_char'] == ch and l['key_char'] == key_char:
+                    l['count'] += 1
+                    logging.debug("**duplicate collision at index %d (count=%d)**" % (i, l['count']))
+                else:
+                    # Either no prior collision at this index, or a new one
+                    l = { 'root_char': ch, 'key_char': key_char, 'count': 1 }
+                    last_key_collision[i] = l
+                backtrack_status['collision_count'] = l['count']
+
+            if try_new_rotation_offset:
+                if of == 26:
+                    # We've run through all possible rotation values, so need to backtrack again
+                    logging.debug("Exhausted all possible rotation values for %s at index %d" % (cipher_word, i))
+                    logging.debug("Current guessed_keys: %s" % guessed_keys)
+                    if len(guessed_keys) < 2:
+                        print("No more keys to guess")
+                        break
+                    # Go back and start iterating over the second-most-recently added key
+                    next_word = guessed_keys[-2]
+                    next_index = key[next_word]['first_occurrence']
+                    logging.debug("backtrack to index %d word %s (current index %d)" % (next_index, next_word, i))
+                    backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': next_index }
+                else:
+                    logging.debug("Try new rotation value %d for word %s" % (of, cipher_word))
+                    k['rotation'] = of
+                    backtrack_status = None
 
             if backtrack_status == None:
                 current_rotation = (current_rotation + of) % 26
@@ -209,29 +242,43 @@ def doit(cipher):
         #          Pretty sure this just means we need to backtrack, but we'll see
         #
         elif key_char in [a['root_char'] for a in key.values()]:
-            assert(backtrack_status == None)
-            print("duplicate key_val %c (orig %c offset %d)" % (key_char, plaintext_char, current_rotation))
-            backtrack_status = { 'reason': DEAD_END }
+            logging.debug("duplicate key_val %c at index %d (orig %c offset %d)" % (key_char, i, plaintext_char, current_rotation))
+            backtrack_status = { 'reason': DUPLICATE_KEY_VALUE }
 
         #
         # State 3: cipher word not present in key and no duplicate key mappings
         #
         else:
-            assert(backtrack_status == None)
-            # Add this word to the key with an initial (guessed) rotation of 0
-            key[cipher_word] = {'root_char': key_char, 'rotation': 0, 'source': GUESSED, 'first_occurrence': i}
+
+            #
+            # If we were able to pre-calculate the rotation offset, use that; otherwise,
+            # start things off with an initial value of 0
+            #
+            rot_val = 0
+            if cipher_word in known_rotation_offsets:
+                rot_val = known_rotation_offsets[cipher_word]
+                current_rotation = (current_rotation + rot_val) % 26
+            else:
+                guessed_keys.append(cipher_word)
+            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
+            logging.debug("Add key %s with char %s, rotation %d" % (cipher_word, key_char, rot_val))
 
         #
         # Backtrack if needed; otherwise, save state and keep going
         #
         if backtrack_status == None:
-            state.append({'start_rotation': start_rotation, 'key': key.copy()})
-            print("current state:", state)
+            state_vars = {
+                'start_rotation': start_rotation,
+                'key': key.copy(),
+                'guessed_keys': guessed_keys.copy()
+            }
+            logging.debug("state_vars: %s" % state_vars)
+            state.append(state_vars)
             start_rotation = current_rotation
             i += 1
 
         else:
-            print("Backtracking")
+            logging.debug("Backtracking- status: %s" % backtrack_status)
             i -= 1
             if i < 0:
                 print("Could not find a fit... giving up")
@@ -240,24 +287,220 @@ def doit(cipher):
             # restore the previous state
             d = state.pop()
             start_rotation = d['start_rotation']
+            guessed_keys = d['guessed_keys']
             current_rotation = start_rotation
             key = d['key']
 
-            loop_count += 1
-            if loop_count >= 10000:
-                print("Breaking loop")
-                break
+            backtrack_loop_count += 1
+            #if backtrack_loop_count >= 10000:
+            #    print("Breaking loop")
+            #    break
 
     print("Final value of i=%d" % i)
     print("Key:", key)
-    print("Loop count:", loop_count)
     #print("Final state:", state)
-    return key
+    print("Backtrack Loop Count:", backtrack_loop_count)
+    if i > 0:
+        return key
+    else:
+        return None
 
-# Initialize position offsets to zero and create a list of tuples
-cipher = list(zip(cipher_list, 'congratulationsyou'))
 
-#cipher = list(zip(cipher_list, 'congratulationsyouareacry'))
-#cipher = list(zip(cipher_list, 'thecache'))
-key = doit(cipher)
-print(decryptit(cipher_list, key))
+def fit_plaintext(text, offset):
+    # TBD: build_rotation_matrix() needs to handle the offset
+    known_rotations = build_rotation_matrix(text)
+    return None
+
+    cipher = list(zip(cipher_list[offset:], text))
+    key = doit(cipher, known_rotations)
+    if key != None:
+        p = decryptit(cipher_list[offset:], key)
+
+        #
+        # Check to make sure the decrypted plaintext matches the input plaintext.
+        # If it's a complete mismatch, that could indicate a bug. Most likely scenario
+        # here is that doit() exited before it could fit all of the plaintext, resulting
+        # in a partial (but otherwise correct) decryption, which is also treated as
+        # a failure.
+        #
+        # In the case of a matching but incorrect key (e.g. fits the input text but not
+        # the entire plaintext) it's not uncommon to have some garbage characters at the
+        # end of the decrypted result. So, need to truncate decryptit() output to the
+        # same length as the input text. This is still considered a successful result,
+        # although the key is not correct - it just means we need to try to fit a longer
+        # string.
+        #
+        if len(p) < len(text):
+            logging.debug("Partial decryption result: %s" % p)
+            return None
+        if p[:len(text)] != text:
+            logging.debug("Decryption mismatch: %s != %s" % (p, text))
+            return None
+        return p
+    return None
+
+def build_rotation_matrix(text):
+    def find_pivot(mat, start_row_index):
+        # Iterate through the columns (except for the RHS, which we don't want to
+        # ever use as a pivot)
+        for col_num in range(len(mat[0]) - 1):
+            for row_num in range(start_row_index, len(mat)):
+                if mat[row_num][col_num] != 0:
+                    print("Found pivot (%d,%d)" % (row_num, col_num))
+                    return (row_num, col_num)
+        print("No pivot found")
+        return (None, None)
+
+    def gauss_jordan_reduce(mat, words):
+        for row_index in range(len(mat)):
+            (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
+            if pivot_row_index == None:
+                break
+            assert(pivot_row_index >= row_index)
+            if pivot_row_index > row_index:
+                print("swap rows %d and %d" % (row_index, pivot_row_index))
+                temp = mat[row_index]
+                mat[row_index] = mat[pivot_row_index]
+                mat[pivot_row_index] = temp
+                #print("matrix now", mat)
+
+            pivot_val = mat[row_index][pivot_col_index]
+
+            #
+            # One of the "gotchas" of taking everything (mod 26) is that we need to
+            # make sure the values in the rightmost column are positive before
+            # dividing them by anything, or "bad things will happen"(tm)
+            #
+            if pivot_val < 0:
+                print(f"**Negative pivot val {pivot_val}")
+                mat[row_index] = [-x for x in mat[row_index]]
+                pivot_val = -pivot_val
+                mat[row_index][-1] %= 26
+
+            #
+            # Transform row to make pivot equal 1
+            # This also converts everything to floating point
+            #
+            mat[row_index] = [i / pivot_val for i in mat[row_index]]
+
+            #
+            # Transform other rows so that everything else in the pivot column is zero
+            #
+            pivot_row = mat[row_index]
+            pivot_row[-1] %= 26
+            print("Pivot row: %s; first nonzero index: %d" % (pivot_row, pivot_col_index))
+            for secondary_row_index in range(0, len(mat)):
+                if secondary_row_index == row_index:
+                    continue
+                secondary_row = mat[secondary_row_index]
+
+                #
+                # Most of the numbers in the matrix represent code word frequencies, not
+                # rotation values, so should not be taken modulo 26. The exception is the
+                # final row in the matrix, which is the RHS of that row's equation.
+                #
+                if secondary_row[pivot_col_index] != 0:
+                    row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
+                    #print(f"row_mult for row {secondary_row_index:2} = {row_mult}")
+                    new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
+                    #print(f"modified row {secondary_row_index:2}     = {new_row}")
+                    new_row[-1] %= 26
+                    #print("new_row %s" % new_row)
+                    mat[secondary_row_index] = new_row
+
+            #print("Subsequent rows: %s" % mat[row_index+1:])
+            print("After %d iteration(s), matrix now:" % (row_index+1))
+            print_matrix(mat, words)
+
+    def get_computed_codeword_rotations(matrix, words):
+        rotations = {}
+        for row in matrix:
+            l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
+            print("non-zero multipliers:", l, "=>", row[-1])
+            # TBD: handle rows with multiple entries in the backtracking algo somehow
+            if len(l) == 1:
+                (mult, word) = l[0]
+                # multiplier should always be 1 for a matrix in reduced row echelon form.
+                # anything else means we have a bug
+                assert(mult == 1.0)
+                assert(row[-1].is_integer())   # Can't have a fractional rotation value
+                rotations[word] = int(row[-1])
+        return(rotations)
+
+    def print_matrix(mat, unique_words):
+        line_no = 0
+        for i in mat:
+            zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
+            words = [w for (w,x) in zthing]
+            total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
+            print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '{:4.1f}'.format(total), words)
+            if total != i[-1]:
+                print("aah.. no..")
+            line_no += 1
+
+    assert(len(text) <= len(cipher_list))
+    cipher = cipher_list[:len(text)]
+    last_occurrence_of = {}
+    unique_words = list(set(cipher))
+    unique_words.sort()
+    print("cipher slice:", cipher)
+    print("cipher slice has %d total words (%d unique)" % (len(text), len(unique_words)))
+    print("unique words:", unique_words)
+    matrix = []
+    for i in range(len(text)):
+        word = cipher[i]
+        if word not in last_occurrence_of:
+            last_occurrence_of[word] = i
+            continue
+        l = last_occurrence_of[word]
+        required_rot = (ord(text[i]) - ord(text[l])) % 26
+        print("Required total rotation between %d and %d = %d" % (l, i, required_rot))
+        sl = cipher[l:i]
+        print("Slice", sl)
+
+        counts = {}
+        for j in sl:
+            if j in counts:
+                counts[j] += 1
+                continue
+            counts[j] = 1
+        matrix_row = []
+        for j in unique_words:
+            if j in counts:
+                matrix_row.append(counts[j])
+                continue
+            matrix_row.append(0)
+        matrix_row.append(required_rot)
+        matrix.append(matrix_row)
+        last_occurrence_of[word] = i
+        
+    print("unique words:", unique_words)
+    print("Initial matrix:")
+    print_matrix(matrix, unique_words)
+    gauss_jordan_reduce(matrix, unique_words)
+    known_rotations = get_computed_codeword_rotations(matrix, unique_words)
+    print("Computed rotations", known_rotations)
+    return(known_rotations)
+
+#text = 'congratulationsyouareacryptogr'
+#text = 'congratulationsyouareacryptographerext'
+text = 'congratulationsyouareacryptographerextraordinaire'
+
+#build_rotation_matrix('norththirtyninedegreestenpoint')
+print(fit_plaintext(text, 0))
+
+#matched_positions = []
+#eliminated_positions = [0, 245, 246, 327, 328, 329, 523, 524, 20, 37, 73, 100, 130, 161, 225, 244, 251, 253, 255, 292, 311, 332, 348, 401, 410, 436, 457, 475, 513, 515, 521, 522, 3, 15, 57, 83, 115, 153, 211, 219, 233, 243, 254, 291, 310, 325, 336, 345, 374, 383, 386, 389, 398, 416, 448, 459, 462, 464]
+#for i in range(len(cipher_list) - len(text)):
+#    if i in eliminated_positions:
+#        continue
+#    r = fit_plaintext(text, i)
+#    if r == None:
+#        print("No fit at position %d" % i)
+#        eliminated_positions.append(i)
+#    else:
+#        print("Got fit at position %d: %s" % (i, r))
+#        matched_positions.append(i)
+#print("Matched positions: ", matched_positions)
+#print("Eliminated positions: ", eliminated_positions)
+
