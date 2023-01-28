@@ -75,7 +75,8 @@ def build_rotation_matrix(cipher_list, text, offset):
         rotations = {}
         for row in matrix:
             l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
-            print("non-zero multipliers:", l, "=>", row[-1])
+            if len(l) > 0:
+                print("non-zero multipliers:", l, "=>", row[-1])
             # TBD: handle rows with multiple entries in the backtracking algo somehow
             if len(l) == 1:
                 (mult, word) = l[0]
