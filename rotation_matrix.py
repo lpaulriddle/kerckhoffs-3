@@ -26,17 +26,6 @@ def build_rotation_matrix(cipher_list, text, offset):
             pivot_val = mat[row_index][pivot_col_index]
 
             #
-            # One of the "gotchas" of taking everything (mod 26) is that we need to
-            # make sure the values in the rightmost column are positive before
-            # dividing them by anything, or "bad things will happen"(tm)
-            #
-            if pivot_val < 0:
-                print(f"**Negative pivot val {pivot_val}")
-                mat[row_index] = [-x for x in mat[row_index]]
-                pivot_val = -pivot_val
-                mat[row_index][-1] %= 26
-
-            #
             # Transform row to make pivot equal 1
             # This also converts everything to floating point
             #
@@ -46,7 +35,6 @@ def build_rotation_matrix(cipher_list, text, offset):
             # Transform other rows so that everything else in the pivot column is zero
             #
             pivot_row = mat[row_index]
-            pivot_row[-1] %= 26
             print("Pivot row: %s; first nonzero index: %d" % (pivot_row, pivot_col_index))
             for secondary_row_index in range(0, len(mat)):
                 if secondary_row_index == row_index:
@@ -57,13 +45,16 @@ def build_rotation_matrix(cipher_list, text, offset):
                 # Most of the numbers in the matrix represent code word frequencies, not
                 # rotation values, so should not be taken modulo 26. The exception is the
                 # final row in the matrix, which is the RHS of that row's equation.
+                # NOTE!! Can't take RHS % 26 until after the row reduction is completely
+                # finished. This is because we have to keep track of whether it is positive or
+                # negative (e.g. does 24 represent +24 or -2), or "bad things will happen(tm)"
+                # when we try to divide the RHS by anything.
                 #
                 if secondary_row[pivot_col_index] != 0:
                     row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
                     #print(f"row_mult for row {secondary_row_index:2} = {row_mult}")
                     new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
                     #print(f"modified row {secondary_row_index:2}     = {new_row}")
-                    new_row[-1] %= 26
                     #print("new_row %s" % new_row)
                     mat[secondary_row_index] = new_row
 
@@ -74,6 +65,9 @@ def build_rotation_matrix(cipher_list, text, offset):
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
         for row in matrix:
+            # At this point, the reduction is complete, and we need to take the RHS % 26 to get
+            # the actual rotation value for the word.
+            row[-1] %= 26
             l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
             if len(l) > 0:
                 print("non-zero multipliers:", l, "=>", row[-1])
@@ -93,8 +87,8 @@ def build_rotation_matrix(cipher_list, text, offset):
             zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
             words = [w for (w,x) in zthing]
             total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
-            print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '{:4.1f}'.format(total), words)
-            if total != i[-1]:
+            print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total), words)
+            if total != (i[-1] % 26):
                 print("aah.. no..")
             line_no += 1
 
