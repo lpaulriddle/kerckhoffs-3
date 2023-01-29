@@ -3,14 +3,31 @@ def build_rotation_matrix(cipher_list, text, offset):
         # Iterate through the columns (except for the RHS, which we don't want to
         # ever use as a pivot)
         for col_num in range(len(mat[0]) - 1):
+            min_pivot_val = 1000
+            min_pivot_row = -1
             for row_num in range(start_row_index, len(mat)):
-                if mat[row_num][col_num] != 0:
-                    print("Found pivot (%d,%d)" % (row_num, col_num))
-                    return (row_num, col_num)
+
+                #
+                # Rather than blindly selecting the first non-zero pivot value, look for the
+                # smallest non-zero pivot value we can find (preferably a 1). This is to
+                # try to avoid dividing by large numbers.
+                #
+                val = mat[row_num][col_num]
+                if abs(val) == 1:
+                    min_pivot_row = row_num
+                    break
+                if (val != 0) and (abs(val) < abs(min_pivot_val)):
+                    min_pivot_val = mat[row_num][col_num]
+                    min_pivot_row = row_num
+                    print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
+            if min_pivot_row >= 0:
+                print(f"Using pivot {min_pivot_row}, {col_num} (value {mat[min_pivot_row][col_num]})")
+                return(min_pivot_row, col_num)
         print("No pivot found")
         return (None, None)
 
     def gauss_jordan_reduce(mat, words):
+        good_matrix = True
         for row_index in range(len(mat)):
             (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
             if pivot_row_index == None:
@@ -61,6 +78,8 @@ def build_rotation_matrix(cipher_list, text, offset):
             #print("Subsequent rows: %s" % mat[row_index+1:])
             print("After %d iteration(s), matrix now:" % (row_index+1))
             print_matrix(mat, words)
+
+        return(good_matrix)
 
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
@@ -131,7 +150,10 @@ def build_rotation_matrix(cipher_list, text, offset):
     print("unique words:", unique_words)
     print("Initial matrix:")
     print_matrix(matrix, unique_words)
-    gauss_jordan_reduce(matrix, unique_words)
+    if gauss_jordan_reduce(matrix, unique_words) == True:
+        print("Good reduction")
+    else:
+        print("Bad reduction")
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
     print("Computed rotations", known_rotations)
     return(known_rotations)
