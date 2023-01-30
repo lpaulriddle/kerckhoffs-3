@@ -20,22 +20,22 @@ def split_cipher(cipher_words, cipher_text):
     assert(cipher_text == ''.join(cipher_list))
     return(cipher_list)
 
-def read_cipher(fname):
+def read_cipher(fname, assume_codeword_lengths):
     raw_cipher = ''
 
     #
-    # Number of times a sequence must appear in the cipher for it to be considered a potential code word
-    # TBD: automatically adjust this based on the length of the cipher?
-    #
-    FREQ_THRESHOLD = 10
-
-    #
-    # Try to find 26 unique digit sequences in the cipher
+    # Tries to find 26 unique digit sequences in the cipher when the word lengths are not known ahead of time.
     # Probably not the most efficient code around, but gets the job done :)
     #
     def find_words(word_length):
         nonlocal raw_cipher
         word_counts = {}
+
+        #
+        # Number of times a sequence must appear in the cipher for it to be considered a potential code word
+        # TBD: automatically adjust this based on the length of the cipher?
+        #
+        FREQ_THRESHOLD = 10
 
         #
         # Find every possible word of the specified length in the cipher and build
@@ -65,15 +65,45 @@ def read_cipher(fname):
             raw_cipher = raw_cipher.replace(word, " ")
         return word_candidates
 
+    #
+    # Figure out the set of codewords when we have the luxury of knowing the lengths ahead
+    # of time (e.g. ciphers #1 and #2)
+    #
+    def read_known_length_words(raw_cipher):
+        cipher_dict = {}
+        pos = 0
+        code = ''
+        while pos < len(raw_cipher):
+            code_length = int(raw_cipher[pos])
+            assert(code_length > 0)
+            for i in range(0, code_length):
+                code += raw_cipher[pos]
+                pos += 1
+
+            # Keep track of frequencies "because we can"
+            # not using them at the moment
+            if code in cipher_dict:
+                cipher_dict[code] += 1
+            else:
+                cipher_dict[code] = 1
+            code = ''
+
+        return(list(cipher_dict.keys()))
+
+    cipher_words = []
     with open(fname, 'r') as file:
-        cipher_words = []
         raw_cipher = file.read().rstrip()
 
-        # Search for words in order of longest (9) to shortest (2)
-        for l in range(9, 1, -1):
-            cipher_words.extend(find_words(l))
+        if assume_codeword_lengths == True:
+            cipher_words = read_known_length_words(raw_cipher)
+        else:
+            # Search for words in order of longest (9) to shortest (2)
+            for l in range(9, 1, -1):
+                cipher_words.extend(find_words(l))
+            assert len(raw_cipher.replace(' ', '')) == 0, f"leftovers: {raw_cipher}"
 
         # A successful run should report 26 cipher words with no leftovers
-        print("Found %d cipher words: " % len(cipher_words), cipher_words)
-        if len(raw_cipher.replace(' ', '')) > 0:
-            print("leftovers:", raw_cipher)
+        print(f"Found {len(cipher_words)} cipher words: {cipher_words}")
+        assert(len(cipher_words) == 26)
+
+    return(cipher_words)
