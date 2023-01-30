@@ -93,6 +93,7 @@ def read_cipher(fname, assume_codeword_lengths):
     cipher_words = []
     with open(fname, 'r') as file:
         raw_cipher = file.read().rstrip()
+        r = raw_cipher
 
         if assume_codeword_lengths == True:
             cipher_words = read_known_length_words(raw_cipher)
@@ -106,4 +107,4 @@ def read_cipher(fname, assume_codeword_lengths):
         print(f"Found {len(cipher_words)} cipher words: {cipher_words}")
         assert(len(cipher_words) == 26)
 
-    return(cipher_words)
+    return(cipher_words, split_cipher(cipher_words, r))
