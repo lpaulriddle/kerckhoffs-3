@@ -75,6 +75,19 @@ def build_rotation_matrix(cipher_list, text, offset):
                     #print("new_row %s" % new_row)
                     mat[secondary_row_index] = new_row
 
+                    #
+                    # Look for a row of all zeroes except the RHS
+                    # Not sure if doing this now will work, or if it needs to be done after the
+                    # reduction completes. I guess I'll find out
+                    #
+                    # Another fun "gotcha" here: with a typical matrix, a row of all zeros except
+                    # the RHS means the matrix is indeterminant (no solution). However, in this
+                    # case, since we're dealing with rotations, any RHS that equals 0 (mod 26) is
+                    # acceptable.
+                    #
+                    if all(v == 0 for v in new_row[:-1]) and (new_row[-1] % 26 != 0):
+                        good_matrix = False
+
             #print("Subsequent rows: %s" % mat[row_index+1:])
             print("After %d iteration(s), matrix now:" % (row_index+1))
             print_matrix(mat, words)
@@ -107,8 +120,9 @@ def build_rotation_matrix(cipher_list, text, offset):
             words = [w for (w,x) in zthing]
             total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
             print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total), words)
-            if total != (i[-1] % 26):
-                print("aah.. no..")
+            # This won't work with #3, because it assumes the last digit of the code word == the rotation
+            #if total != (i[-1] % 26):
+            #    print("aah.. no..")
             line_no += 1
 
     assert(len(text) <= len(cipher_list) - offset)
@@ -150,10 +164,9 @@ def build_rotation_matrix(cipher_list, text, offset):
     print("unique words:", unique_words)
     print("Initial matrix:")
     print_matrix(matrix, unique_words)
+    result = "Bad"
     if gauss_jordan_reduce(matrix, unique_words) == True:
-        print("Good reduction")
-    else:
-        print("Bad reduction")
+        result = "Good"
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
-    print("Computed rotations", known_rotations)
+    print(f"{result} reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
     return(known_rotations)
