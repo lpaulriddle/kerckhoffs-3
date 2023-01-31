@@ -164,9 +164,8 @@ def build_rotation_matrix(cipher_list, text, offset):
     print("unique words:", unique_words)
     print("Initial matrix:")
     print_matrix(matrix, unique_words)
-    result = "Bad"
-    if gauss_jordan_reduce(matrix, unique_words) == True:
-        result = "Good"
+    result = gauss_jordan_reduce(matrix, unique_words)
+    result_str = 'Good' if result == True else 'Bad'
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
-    print(f"{result} reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
-    return(known_rotations)
+    print(f"{result_str} reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
+    return(known_rotations if result == True else None)
