@@ -33,8 +33,23 @@ for lon_index in lon_dict:
         elif (lon_index >= lat_index) and (lon_index < lat_index + len(latitude_pt)):
             print(f"lonindex overlap {lat_index} {lon_index}")
         else:
-            print(f"latlonindex {lat_index}, {lon_index}")
 
-#
-# TBD: Eliminate pairs with conflicting rotation values for the same cipher word
-#
+            #
+            # Look for combos with different values for the same codeword
+            # For K3, this eliminates about 50% of the remaining non-overlapping combos,
+            # leaving a total of just under 11,000 valid combos
+            #
+            key_mismatch = False
+            lats = lat_dict[lat_index]
+            lons = lon_dict[lon_index]
+            lat_set = set(lats)
+            lon_set = set(lons)
+            for common_key in list(lat_set & lon_set):
+                if lats[common_key] != lons[common_key]:
+                    print(f"non-matching key {common_key} for {lat_index} {lon_index}")
+                    key_mismatch = True
+                    break
+            if key_mismatch == False:
+                num_keys = len(lat_set.union(lon_set))
+                print(f"latlonindex {lat_index}, {lon_index} - {num_keys} known keys")
+
