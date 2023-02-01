@@ -303,9 +303,11 @@ text = 'westseventysixdegreesfiftyonepoint'
 #text = 'confusingididntwantanynum'
 #text = 'degreestenpoint'
 
-for i in range(len(cipher_list) - len(text)):
-    print(f"Fitting {text} at position {i}")
-    print(fit_plaintext(cipher_list, text, i))
+print(fit_plaintext(cipher_list, text, 414))
+
+#for i in range(len(cipher_list) - len(text)):
+#    print(f"Fitting {text} at position {i}")
+#    print(fit_plaintext(cipher_list, text, i))
 
 #matched_positions = []
 #eliminated_positions = [0, 245, 246, 327, 328, 329, 523, 524, 20, 37, 73, 100, 130, 161, 225, 244, 251, 253, 255, 292, 311, 332, 348, 401, 410, 436, 457, 475, 513, 515, 521, 522, 3, 15, 57, 83, 115, 153, 211, 219, 233, 243, 254, 291, 310, 325, 336, 345, 374, 383, 386, 389, 398, 416, 448, 459, 462, 464]
