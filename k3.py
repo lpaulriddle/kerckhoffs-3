@@ -69,6 +69,46 @@ def decryptit(cipher_list, key):
             break
     return plaintext
 
+#non-zero multipliers: [(1.0, '143261'), (1.0, '871646')] => 19.0
+#non-zero multipliers: [(1.0, '222146337'), (1.0, '80920926')] => 3.0
+#non-zero multipliers: [(1.0, '418'), (1.0, '946294413')] => 0.0
+#non-zero multipliers: [(1.0, '6103003'), (1.0, '80920926')] => 9.0
+#'key': {'860': {'root_char': 'w', 'rotation': 0, 'first_occurrence': 0}}
+def is_valid_rotation(key, word, rotation_val):
+    if word == '143261':
+        if ('871646' in key) and ((key['871646']['rotation'] + rotation_val) % 26 != 19):
+            return False
+        return True
+    elif word == '871646':
+        if ('143261' in key) and ((key['143261']['rotation'] + rotation_val) % 26 != 19):
+            return False
+        return True
+    elif word == '222146337':
+        if ('80920926' in key) and ((key['80920926']['rotation'] + rotation_val) % 26 != 3):
+            return False
+        return True
+    elif word == '80920926':
+        # Note- this one occurs twice
+        if ('222146337' in key) and ((key['222146337']['rotation'] + rotation_val) % 26 != 3):
+            return False
+        if ('6103003' in key) and ((key['6103003']['rotation'] + rotation_val) % 26 != 9):
+            return False
+        return True
+    elif word == '418':
+        if ('946294413' in key) and ((key['946294413']['rotation'] + rotation_val) % 26 != 0):
+            return False
+        return True
+    elif word == '946294413':
+        if ('418' in key) and ((key['418']['rotation'] + rotation_val) % 26 != 0):
+            return False
+        return True
+    elif word == '6103003':
+        if ('80920926' in key) and ((key['80920926']['rotation'] + rotation_val) % 26 != 9):
+            return False
+        return True
+    else:
+        return True
+
 def doit(cipher, known_rotation_offsets):
     state = []
     key = {}
@@ -196,9 +236,6 @@ def doit(cipher, known_rotation_offsets):
             logging.debug("duplicate key_val %c at index %d (orig %c offset %d)" % (key_char, i, plaintext_char, current_rotation))
             backtrack_status = { 'reason': DUPLICATE_KEY_VALUE }
 
-        #
-        # State 3: cipher word not present in key and no duplicate key mappings
-        #
         else:
 
             #
@@ -210,6 +247,10 @@ def doit(cipher, known_rotation_offsets):
                 rot_val = known_rotation_offsets[cipher_word]
                 current_rotation = (current_rotation + rot_val) % 26
             else:
+                if is_valid_rotation(key, cipher_word, rot_val):
+                    logging.debug(f"rot_val {rot_val} valid for cipher_word {cipher_word}")
+                else:
+                    logging.debug(f"rot_val {rot_val} not valid for cipher_word {cipher_word}")
                 guessed_keys.append(cipher_word)
             key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
             logging.debug("Add key %s with char %s, rotation %d" % (cipher_word, key_char, rot_val))
@@ -259,7 +300,7 @@ def doit(cipher, known_rotation_offsets):
 
 def fit_plaintext(cipher_list, text, offset):
     known_rotations = build_rotation_matrix(cipher_list, text, offset)
-    return None
+#    return None
 
     cipher = list(zip(cipher_list[offset:], text))
     key = doit(cipher, known_rotations)
