@@ -89,9 +89,11 @@ def build_rotation_matrix(cipher_list, text, offset):
                         good_matrix = False
 
             #print("Subsequent rows: %s" % mat[row_index+1:])
-            print("After %d iteration(s), matrix now:" % (row_index+1))
-            print_matrix(mat, words)
+            #print("After %d iteration(s), matrix now:" % (row_index+1))
+            #print_matrix(mat, words)
 
+        print("Reduced matrix:")
+        print_matrix(mat,words)
         return(good_matrix)
 
     def get_computed_codeword_rotations(matrix, words):
