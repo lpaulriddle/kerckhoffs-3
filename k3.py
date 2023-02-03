@@ -109,13 +109,22 @@ def is_valid_rotation(key, word, rotation_val):
     else:
         return True
 
-def doit(cipher, known_rotation_offsets):
+def get_initial_rotation(key, word, known_rotations):
+    if word in known_rotations:
+        return (known_rotations[word], True)
+    rot_val = 0
+    if is_valid_rotation(key, word, rot_val):
+        logging.debug(f"rot_val {rot_val} valid for cipher_word {word}")
+    else:
+        logging.debug(f"rot_val {rot_val} not valid for cipher_word {word}")
+    return (0, False)
+
+def doit(cipher, known_rotations):
     state = []
     key = {}
     guessed_keys = []           # list of guessed cipher words in order of first appearance
     current_rotation = 0            # alphabet offset at the current point in the cipher
     start_rotation = current_rotation # first offset we tried before moving on to others
-    #known_rotation_offsets = find_known_rotation_offsets(cipher)
     last_key_collision = [None] * len(cipher)
 
     i = 0
@@ -239,18 +248,17 @@ def doit(cipher, known_rotation_offsets):
         else:
 
             #
-            # If we were able to pre-calculate the rotation offset, use that; otherwise,
-            # start things off with an initial value of 0
+            # Based on the rotation matrix, each codeword falls into one of three categories.
             #
-            rot_val = 0
-            if cipher_word in known_rotation_offsets:
-                rot_val = known_rotation_offsets[cipher_word]
+            # bound/dependent: the rotation can be expressed relative to one or more other words
+            # unbound/independent: the rotation has no dependencies on other words
+            #
+
+            # 1. known/precalculated: we were able to solve for the exact rotation
+            (rot_val, is_calculated) = get_initial_rotation(key, cipher_word, known_rotations)
+            if rot_val > 0:
                 current_rotation = (current_rotation + rot_val) % 26
-            else:
-                if is_valid_rotation(key, cipher_word, rot_val):
-                    logging.debug(f"rot_val {rot_val} valid for cipher_word {cipher_word}")
-                else:
-                    logging.debug(f"rot_val {rot_val} not valid for cipher_word {cipher_word}")
+            if is_calculated == False:
                 guessed_keys.append(cipher_word)
             key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
             logging.debug("Add key %s with char %s, rotation %d" % (cipher_word, key_char, rot_val))
