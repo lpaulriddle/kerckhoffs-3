@@ -76,47 +76,62 @@ def decryptit(cipher_list, key):
 #'key': {'860': {'root_char': 'w', 'rotation': 0, 'first_occurrence': 0}}
 def is_valid_rotation(key, word, rotation_val):
     if word == '143261':
-        if ('871646' in key) and ((key['871646']['rotation'] + rotation_val) % 26 != 19):
+        if '871646' in key:
+            if (key['871646']['rotation'] + rotation_val) % 26 == 19:
+                return True
             return False
-        return True
+        return None
     elif word == '871646':
-        if ('143261' in key) and ((key['143261']['rotation'] + rotation_val) % 26 != 19):
+        if '143261' in key:
+            if (key['143261']['rotation'] + rotation_val) % 26 == 19:
+                return True
             return False
-        return True
+        return None
     elif word == '222146337':
-        if ('80920926' in key) and ((key['80920926']['rotation'] + rotation_val) % 26 != 3):
+        if '80920926' in key:
+            if (key['80920926']['rotation'] + rotation_val) % 26 == 3:
+                return True
             return False
-        return True
+        return None
     elif word == '80920926':
         # Note- this one occurs twice
-        if ('222146337' in key) and ((key['222146337']['rotation'] + rotation_val) % 26 != 3):
-            return False
-        if ('6103003' in key) and ((key['6103003']['rotation'] + rotation_val) % 26 != 9):
-            return False
-        return True
+        retval = None
+        if '222146337' in key:
+            if (key['222146337']['rotation'] + rotation_val) % 26 != 3:
+                return False
+            retval = True
+        if '6103003' in key:
+            if (key['6103003']['rotation'] + rotation_val) % 26 != 9:
+                return False
+            retval = True
+        return retval
     elif word == '418':
-        if ('946294413' in key) and ((key['946294413']['rotation'] + rotation_val) % 26 != 0):
+        if '946294413' in key:
+            if (key['946294413']['rotation'] + rotation_val) % 26 == 0:
+                return True
             return False
-        return True
+        return None
     elif word == '946294413':
-        if ('418' in key) and ((key['418']['rotation'] + rotation_val) % 26 != 0):
+        if '418' in key:
+            if (key['418']['rotation'] + rotation_val) % 26 == 0:
+                return True
             return False
-        return True
+        return None
     elif word == '6103003':
-        if ('80920926' in key) and ((key['80920926']['rotation'] + rotation_val) % 26 != 9):
+        if '80920926' in key:
+            if (key['80920926']['rotation'] + rotation_val) % 26 == 9:
+                return True
             return False
-        return True
+        return None
     else:
-        return True
+        return None
 
 def get_initial_rotation(key, word, known_rotations):
     if word in known_rotations:
         return (known_rotations[word], True)
-    rot_val = 0
-    if is_valid_rotation(key, word, rot_val):
-        logging.debug(f"rot_val {rot_val} valid for cipher_word {word}")
-    else:
-        logging.debug(f"rot_val {rot_val} not valid for cipher_word {word}")
+    if word in ['143261','871646','222146337','80920926','418','946294413','6103003']:
+        result = str(is_valid_rotation(key, word, 0))
+        logging.debug(f"is_valid_rotation({word}, 0) == {result}")
     return (0, False)
 
 def doit(cipher, known_rotations):
