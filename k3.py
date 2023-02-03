@@ -74,65 +74,70 @@ def decryptit(cipher_list, key):
 #non-zero multipliers: [(1.0, '418'), (1.0, '946294413')] => 0.0
 #non-zero multipliers: [(1.0, '6103003'), (1.0, '80920926')] => 9.0
 #'key': {'860': {'root_char': 'w', 'rotation': 0, 'first_occurrence': 0}}
-def is_valid_rotation(key, word, rotation_val):
+def get_valid_rotation(key, word):
     if word == '143261':
         if '871646' in key:
-            if (key['871646']['rotation'] + rotation_val) % 26 == 19:
-                return True
-            return False
+            return (19 - key['871646']['rotation']) % 26
         return None
     elif word == '871646':
         if '143261' in key:
-            if (key['143261']['rotation'] + rotation_val) % 26 == 19:
-                return True
-            return False
+            return (19 - key['143261']['rotation']) % 26
         return None
     elif word == '222146337':
         if '80920926' in key:
-            if (key['80920926']['rotation'] + rotation_val) % 26 == 3:
-                return True
-            return False
+            return (3 - key['80920926']['rotation']) % 26
         return None
     elif word == '80920926':
         # Note- this one occurs twice
-        retval = None
+        rotval = None
         if '222146337' in key:
-            if (key['222146337']['rotation'] + rotation_val) % 26 != 3:
-                return False
-            retval = True
+            rotval = (3 - key['222146337']['rotation']) % 26
         if '6103003' in key:
-            if (key['6103003']['rotation'] + rotation_val) % 26 != 9:
-                return False
-            retval = True
-        return retval
+            rotval2 = (9 - key['6103003']['rotation']) % 26
+            if (rotval != None) and (rotval != rotval2):
+                return -1
+            rotval = rotval2
+        return rotval
     elif word == '418':
         if '946294413' in key:
-            if (key['946294413']['rotation'] + rotation_val) % 26 == 0:
-                return True
-            return False
+            return (0 - key['946294413']['rotation']) % 26
         return None
     elif word == '946294413':
         if '418' in key:
-            if (key['418']['rotation'] + rotation_val) % 26 == 0:
-                return True
-            return False
+            return (0 - key['418']['rotation']) % 26
         return None
     elif word == '6103003':
         if '80920926' in key:
-            if (key['80920926']['rotation'] + rotation_val) % 26 == 9:
-                return True
-            return False
+            return (9 - key['80920926']['rotation']) % 26
         return None
     else:
+        # Should theoretically never get here
         return None
 
+#
+# Gets initial initial rotation for a codeword by looking at the rotation matrix
+# Returns:
+#    A rotation value if we could calculate one
+#    None if we couldn't (indicating we should guess a rotation, starting at zero)
+#    -1 if we calculated two or more conflicting values (indicating we need to backtrack)
+#
 def get_initial_rotation(key, word, known_rotations):
     if word in known_rotations:
-        return (known_rotations[word], True)
+        return known_rotations[word]
     if word in ['143261','871646','222146337','80920926','418','946294413','6103003']:
-        result = str(is_valid_rotation(key, word, 0))
-        logging.debug(f"is_valid_rotation({word}, 0) == {result}")
-    return (0, False)
+        result = get_valid_rotation(key, word)
+        if result == None:
+            logging.debug(f"get_valid_rotation: not enough variables known to calculate word {word} (start with 0)")
+            return None
+        elif result == -1:
+            logging.debug(f"get_valid_rotation: conflicting rotation values for word {word} (backtrack)")
+            exit(0)   # TBD- need to backtrack
+        else:
+            logging.debug(f"get_valid_rotation: computed rotation value for word {word} == {result}")
+            return result
+
+    # Free/independent variable not in matrix (start at 0)
+    return None
 
 def doit(cipher, known_rotations):
     state = []
@@ -263,18 +268,15 @@ def doit(cipher, known_rotations):
         else:
 
             #
-            # Based on the rotation matrix, each codeword falls into one of three categories.
+            # Calculate an initial rotation value (if possible) and add the word to the key
             #
-            # bound/dependent: the rotation can be expressed relative to one or more other words
-            # unbound/independent: the rotation has no dependencies on other words
-            #
-
-            # 1. known/precalculated: we were able to solve for the exact rotation
-            (rot_val, is_calculated) = get_initial_rotation(key, cipher_word, known_rotations)
-            if rot_val > 0:
-                current_rotation = (current_rotation + rot_val) % 26
-            if is_calculated == False:
+            rot_val = get_initial_rotation(key, cipher_word, known_rotations)
+            if rot_val == None:
+                rot_val = 0
                 guessed_keys.append(cipher_word)
+            elif rot_val > 0:
+                current_rotation = (current_rotation + rot_val) % 26
+
             key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
             logging.debug("Add key %s with char %s, rotation %d" % (cipher_word, key_char, rot_val))
 
