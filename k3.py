@@ -124,17 +124,73 @@ def get_valid_rotation(key, word):
 def get_initial_rotation(key, word, known_rotations, oldrots):
     if word in oldrots:
         return oldrots[word]
-    if word in ['143261','871646','222146337','80920926','418','946294413','6103003']:
-        result = get_valid_rotation(key, word)
-        if result == None:
-            logging.debug(f"get_valid_rotation: not enough variables known to calculate word {word} (start with 0)")
+    if word in known_rotations:
+
+        # temp old code for comparison
+        old_result = get_valid_rotation(key, word)
+
+        #
+        # In the event that we have multiple rows that contain the word, the same
+        # rotation has to satisfy all of them (e.g. we have to calculate the same
+        # rotation for this word for every row)
+        #
+        # This code words for my initial test case, but needs serious stress testing
+        # with known plaintext
+        #
+        word_solution = None
+        for (lhs, rhs) in known_rotations[word]:
+            print(f"roweqn for {word} is lhs {lhs} rhs {rhs}")
+            word_coeff = None
+            solution = None
+            for (c, w) in lhs:
+                # Look for the current word
+                if w == word:
+                    # We need exactly one occurrence of the current word. Any more == bug
+                    assert(word_coeff == None)
+                    word_coeff = c   # multiplier for this word
+                    continue
+
+                #
+                # See if the other words in the row are present in the key, and if so,
+                # use them to calculate the rotation.
+                #
+                if w in key:
+                    if solution == None:
+                        solution = 0
+                    solution += key[w]['rotation'] * c
+                    continue
+
+                #
+                # If we got here, then one or more of the dependent words are not (yet)
+                # in the key, so we can't calculate a solution.
+                #
+                solution = None
+                break
+            else:
+                # Make sure the row contained our word
+                assert(word_coeff != None)
+                if solution != None:
+                    solution = rhs - solution
+                    if word_coeff > 1.0:
+                        solution /= word_coeff
+                    assert(solution.is_integer())
+                    solution = int(solution) % 26
+                    if word_solution == None:
+                        word_solution = solution
+                    elif word_solution != solution:
+                        logging.debug(f"get_initial_rotation: conflicting rotation values for word {word} old_result {old_result}")
+                        exit(0) # TBD: handle this (probably by backtracking)
+        if word_solution == None:
+            logging.debug(f"get_initial_rotation: not enough variables known to calculate word {word}")
+            if old_result != None:
+                logging.debug("old_result mismatch word_solution {word_solution} old_result {old_result}")
+                exit(1)
             return None
-        elif result == -1:
-            logging.debug(f"get_valid_rotation: conflicting rotation values for word {word} (backtrack)")
-            exit(0)   # TBD- need to backtrack
-        else:
-            logging.debug(f"get_valid_rotation: computed rotation value for word {word} == {result}")
-            return result
+        logging.debug(f"get_initial_rotation: computed rotation value for word {word} == {word_solution}")
+        if old_result != word_solution:
+            logging.debug("old_result mismatch word_solution {word_solution} old_result {old_result}")
+            exit(1)
+        return word_solution
 
     # Free/independent variable not in matrix (start at 0)
     return None
