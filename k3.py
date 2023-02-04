@@ -325,6 +325,8 @@ def doit(cipher, known_rotations):
 
 def fit_plaintext(cipher_list, text, offset):
     known_rotations = build_rotation_matrix(cipher_list, text, offset)
+    # Put the new result into a form that the current code understands
+    known_rotations = dict([(word,mat[0][1]) for (word,mat) in known_rotations.items() if len(mat[0][0]) == 1])
 #    return None
 
     cipher = list(zip(cipher_list[offset:], text))

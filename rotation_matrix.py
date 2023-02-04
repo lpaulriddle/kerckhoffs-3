@@ -98,7 +98,6 @@ def build_rotation_matrix(cipher_list, text, offset):
 
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
-        newrots = {}
         for row in matrix:
             # Can't have a fractional rotation value
             assert(row[-1].is_integer())
@@ -108,23 +107,20 @@ def build_rotation_matrix(cipher_list, text, offset):
             row[-1] %= 26
             l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
             if len(l) > 0:
+                # First non-zero coefficient should alwasy be 1 for a matrix in reduced row
+                # echelon form. Anything else means we have a bug.
+                assert(l[0][0] == 1.0)
                 print("non-zero multipliers:", l, "=>", row[-1])
             for (mult, word) in l:
                 # Basically a representation of this line's equation that we can evaluate later
                 eq = (l, int(row[-1]))
-                if word in newrots:
-                    newrots[word].append(eq)
+                if word in rotations:
+                    rotations[word].append(eq)
                 else:
-                    newrots[word] = [eq]
-            # TBD: handle rows with multiple entries in the backtracking algo somehow
-            if len(l) == 1:
-                (mult, word) = l[0]
-                # multiplier should always be 1 for a matrix in reduced row echelon form.
-                # anything else means we have a bug
-                assert(mult == 1.0)
-                rotations[word] = int(row[-1])
-        print(f"{len(newrots)} newrots: {newrots}")
-        return(rotations, newrots)
+                    rotations[word] = [eq]
+
+        print(f"{len(rotations)} rotations: {rotations}")
+        return(rotations)
 
     def print_matrix(mat, unique_words):
         line_no = 0
