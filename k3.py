@@ -121,9 +121,9 @@ def get_valid_rotation(key, word):
 #    None if we couldn't (indicating we should guess a rotation, starting at zero)
 #    -1 if we calculated two or more conflicting values (indicating we need to backtrack)
 #
-def get_initial_rotation(key, word, known_rotations):
-    if word in known_rotations:
-        return known_rotations[word]
+def get_initial_rotation(key, word, known_rotations, oldrots):
+    if word in oldrots:
+        return oldrots[word]
     if word in ['143261','871646','222146337','80920926','418','946294413','6103003']:
         result = get_valid_rotation(key, word)
         if result == None:
@@ -150,6 +150,9 @@ def doit(cipher, known_rotations):
     i = 0
     backtrack_loop_count = 0
     backtrack_status = None
+
+    # Put the rotations into a form that the current code understands
+    oldrots = dict([(word,mat[0][1]) for (word,mat) in known_rotations.items() if len(mat[0][0]) == 1])
 
     #
     # Variables to save with state (anything not explicitly set/assigned at start of while loop):
@@ -270,7 +273,7 @@ def doit(cipher, known_rotations):
             #
             # Calculate an initial rotation value (if possible) and add the word to the key
             #
-            rot_val = get_initial_rotation(key, cipher_word, known_rotations)
+            rot_val = get_initial_rotation(key, cipher_word, known_rotations, oldrots)
             if rot_val == None:
                 rot_val = 0
                 guessed_keys.append(cipher_word)
@@ -325,8 +328,6 @@ def doit(cipher, known_rotations):
 
 def fit_plaintext(cipher_list, text, offset):
     known_rotations = build_rotation_matrix(cipher_list, text, offset)
-    # Put the new result into a form that the current code understands
-    known_rotations = dict([(word,mat[0][1]) for (word,mat) in known_rotations.items() if len(mat[0][0]) == 1])
 #    return None
 
     cipher = list(zip(cipher_list[offset:], text))

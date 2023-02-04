@@ -107,12 +107,14 @@ def build_rotation_matrix(cipher_list, text, offset):
             row[-1] %= 26
             l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
             if len(l) > 0:
-                # First non-zero coefficient should alwasy be 1 for a matrix in reduced row
+                # First non-zero coefficient should always be 1 for a matrix in reduced row
                 # echelon form. Anything else means we have a bug.
                 assert(l[0][0] == 1.0)
                 print("non-zero multipliers:", l, "=>", row[-1])
             for (mult, word) in l:
-                # Basically a representation of this line's equation that we can evaluate later
+                #
+                # Build a list of row equations for this code word for later evaluation.
+                #
                 eq = (l, int(row[-1]))
                 if word in rotations:
                     rotations[word].append(eq)
