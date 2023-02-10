@@ -46,55 +46,58 @@ def calculate_multi_row_rotation(word, unknowns, rotations):
     print(f"Multi row calc {required_sum}")
     return required_sum
 
+def build_initial_key(matrix_rotations):
+
+    #
+    # We need to get the list of words in the order they appear in the matrix
+    # This gets sorted in the reduction code, so just need to return that somehow to avoid doing
+    # it again here
+    #
+    unique_words = list(matrix_rotations.keys())
+    unique_words.sort()
+    unique_words.reverse()
+    print("unique_words", unique_words)
+
+    #
+    # Pull out keys we know for sure ahead of time
+    # This is a little bit convoluted, but if the algorithm works, we'll do this upstream
+    # in the matrix code somehow..
+    #
+    single_row_vars = dict([(a,b[0]) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) == 1])
+    known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
+    print("known_rotations", known_rotations)
+
+    #
+    # Now, pull out all the unknowns, which basically means "anything not in known_rotations"
+    # This includes unknown rotations that appear in one or more rows of the matrix
+    #
+    unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in known_rotations])
+    print("unknown_rotations", unknown_rotations)
+
+    assert(len(known_rotations) + len(unknown_rotations)) == len(matrix_rotations)
+
+    pos = 0
+    rotations = known_rotations.copy()
+
+    while pos < len(unique_words):
+        val = unique_words[pos]
+        print(f"doing {val}")
+        if val in known_rotations:
+            pass
+        else:
+            assert(val in unknown_rotations)
+            r = calculate_multi_row_rotation(val, unknown_rotations[val], rotations)
+            # TBD- Need to mark as calculated or guessed for backtracking purposes
+            if r == None:
+                r = 0
+            rotations[val] = r
+        print(f"position {pos} rots {rotations}")
+        pos += 1
+    return rotations
+
 (cipher_words, cipher_list) = read_cipher("k2.txt", True)
 matrix_rotations = build_rotation_matrix(cipher_list, 'congratulationsyouareacryptographere', 0)
-
 print("-------")
-
-#
-# We need to get the list of words in the order they appear in the matrix
-# This gets sorted in the reduction code, so just need to return that somehow to avoid doing
-# it again here
-#
-unique_words = list(matrix_rotations.keys())
-unique_words.sort()
-unique_words.reverse()
-print("unique_words", unique_words)
-
-#
-# Pull out keys we know for sure ahead of time
-# This is a little bit convoluted, but if the algorithm works, we'll do this upstream
-# in the matrix code somehow..
-#
-single_row_vars = dict([(a,b[0]) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) == 1])
-known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
-print("known_rotations", known_rotations)
-
-#
-# Now, pull out all the unknowns, which basically means "anything not in known_rotations"
-# This includes unknown rotations that appear in one or more rows of the matrix
-#
-unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in known_rotations])
-print("unknown_rotations", unknown_rotations)
-
-assert(len(known_rotations) + len(unknown_rotations)) == len(matrix_rotations)
-
-pos = 0
-rotations = known_rotations.copy()
-
-while pos < len(unique_words):
-    val = unique_words[pos]
-    print(f"doing {val}")
-    if val in known_rotations:
-        pass
-    else:
-        assert(val in unknown_rotations)
-        r = calculate_multi_row_rotation(val, unknown_rotations[val], rotations)
-        # TBD- Need to mark as calculated or guessed for backtracking purposes
-        if r == None:
-            r = 0
-        rotations[val] = r
-    print(f"position {pos} rots {rotations}")
-    pos += 1
-    
-print(f"rotations {rotations}")
+if matrix_rotations != None:
+    rotations = build_initial_key(matrix_rotations)
+    print(f"rotations {rotations}")
