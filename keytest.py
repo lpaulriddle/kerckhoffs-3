@@ -29,12 +29,20 @@ def calculate_single_row_rotation(word, unknowns, rotations):
 
 def calculate_multi_row_rotation(word, unknowns, rotations):
     required_sum = None
+
+    #
+    # Loop through the list of rows, calculating any values we can
+    #
     for thing in unknowns:
         print(f"Let's take care of {thing}")
         r = calculate_single_row_rotation(word, thing, rotations)
         if r != None:
-            required_sum = r
-            break
+            if required_sum == None:
+                required_sum = r
+            elif required_sum != r:
+                # If we've calculated a value from a previous row, any subsequent values we calculate
+                # must match it
+                raise Exception(f"Multi-row equation mismatch: {required_sum} != {r} for {unknowns}")
     print(f"Multi row calc {required_sum}")
     return required_sum
 
