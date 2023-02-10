@@ -71,18 +71,13 @@ known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(sin
 print("known_rotations", known_rotations)
 
 #
-# Now, pull out single matrix rows with multiple unknowns
+# Now, pull out all the unknowns, which basically means "anything not in known_rotations"
+# This includes unknown rotations that appear in one or more rows of the matrix
 #
-single_row_unknowns = dict([(a,b) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) > 1])
-print("single_row_unknowns", single_row_unknowns)
+unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in known_rotations])
+print("unknown_rotations", unknown_rotations)
 
-#
-# Finally, identify variables that are in multiple rows of the matrix
-#
-multi_row_unknowns = dict([(a,b) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) > 1])
-print("multi_row_unknowns", multi_row_unknowns)
-
-assert(len(known_rotations) + len(single_row_unknowns) + len(multi_row_unknowns)) == len(matrix_rotations)
+assert(len(known_rotations) + len(unknown_rotations)) == len(matrix_rotations)
 
 pos = 0
 rotations = known_rotations.copy()
@@ -92,15 +87,10 @@ while pos < len(unique_words):
     print(f"doing {val}")
     if val in known_rotations:
         pass
-    elif val in single_row_unknowns:
-        r = calculate_single_row_rotation(val, single_row_unknowns[val], rotations)
-        # Need to mark as calculated or guessed for backtracking purposes
-        if r == None:
-            r = 0
-        rotations[val] = r
     else:
-        assert(val in multi_row_unknowns)
-        r = calculate_multi_row_rotation(val, multi_row_unknowns[val], rotations)
+        assert(val in unknown_rotations)
+        r = calculate_multi_row_rotation(val, unknown_rotations[val], rotations)
+        # TBD- Need to mark as calculated or guessed for backtracking purposes
         if r == None:
             r = 0
         rotations[val] = r
