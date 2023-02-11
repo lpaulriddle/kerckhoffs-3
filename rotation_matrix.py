@@ -136,42 +136,44 @@ def build_rotation_matrix(cipher_list, text, offset):
             #    print("aah.. no..")
             line_no += 1
 
-    assert(len(text) <= len(cipher_list) - offset)
-    cipher = cipher_list[offset:len(text) + offset]
-    last_occurrence_of = {}
-    unique_words = list(set(cipher))
-    unique_words.sort()
-    print("cipher slice:", cipher)
-    print("cipher slice has %d total words (%d unique)" % (len(text), len(unique_words)))
-    print("unique words:", unique_words)
-    matrix = []
-    for i in range(len(text)):
-        word = cipher[i]
-        if word not in last_occurrence_of:
-            last_occurrence_of[word] = i
-            continue
-        l = last_occurrence_of[word]
-        required_rot = (ord(text[i]) - ord(text[l])) % 26
-        print("Required total rotation between %d and %d = %d" % (l, i, required_rot))
-        sl = cipher[l:i]
-        print("Slice", sl)
+    def build_initial_matrix(text, cipher_list, offset):
+        assert(len(text) <= len(cipher_list) - offset)
+        cipher = cipher_list[offset:len(text) + offset]
+        last_occurrence_of = {}
+        unique_words = list(set(cipher))
+        unique_words.sort()
+        print(f"cipher slice: {cipher}")
+        print(f"cipher slice has {len(text)} total words ({len(unique_words)} unique)")
+        matrix = []
+        for i in range(len(text)):
+            word = cipher[i]
+            if word not in last_occurrence_of:
+                last_occurrence_of[word] = i
+                continue
+            l = last_occurrence_of[word]
+            required_rot = (ord(text[i]) - ord(text[l])) % 26
+            print(f"Required total rotation between {l} and {i} = {required_rot}")
+            sl = cipher[l:i]
+            print("Slice", sl)
 
-        counts = {}
-        for j in sl:
-            if j in counts:
-                counts[j] += 1
-                continue
-            counts[j] = 1
-        matrix_row = []
-        for j in unique_words:
-            if j in counts:
-                matrix_row.append(counts[j])
-                continue
-            matrix_row.append(0)
-        matrix_row.append(required_rot)
-        matrix.append(matrix_row)
-        last_occurrence_of[word] = i
-        
+            counts = {}
+            for j in sl:
+                if j in counts:
+                    counts[j] += 1
+                    continue
+                counts[j] = 1
+            matrix_row = []
+            for j in unique_words:
+                if j in counts:
+                    matrix_row.append(counts[j])
+                    continue
+                matrix_row.append(0)
+            matrix_row.append(required_rot)
+            matrix.append(matrix_row)
+            last_occurrence_of[word] = i
+        return(matrix, unique_words)
+
+    (matrix, unique_words) = build_initial_matrix(text, cipher_list, offset)
     print("unique words:", unique_words)
     print("Initial matrix:")
     print_matrix(matrix, unique_words)
