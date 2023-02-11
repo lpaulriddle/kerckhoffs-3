@@ -1,4 +1,4 @@
-def build_rotation_matrix(cipher_list, text, offset):
+def build_rotation_matrix_new(cipher_list, text_offset_list):
     def find_pivot(mat, start_row_index):
         # Iterate through the columns (except for the RHS, which we don't want to
         # ever use as a pivot)
@@ -136,24 +136,23 @@ def build_rotation_matrix(cipher_list, text, offset):
             #    print("aah.. no..")
             line_no += 1
 
-    def build_initial_matrix(text, cipher_list, offset):
-        assert(len(text) <= len(cipher_list) - offset)
-        cipher = cipher_list[offset:len(text) + offset]
+    def build_initial_matrix(text, cipher_slice):
+        assert(len(cipher_slice) == len(text))
         last_occurrence_of = {}
-        unique_words = list(set(cipher))
+        unique_words = list(set(cipher_slice))
         unique_words.sort()
-        print(f"cipher slice: {cipher}")
+        print(f"cipher slice: {cipher_slice}")
         print(f"cipher slice has {len(text)} total words ({len(unique_words)} unique)")
         matrix = []
         for i in range(len(text)):
-            word = cipher[i]
+            word = cipher_slice[i]
             if word not in last_occurrence_of:
                 last_occurrence_of[word] = i
                 continue
             l = last_occurrence_of[word]
             required_rot = (ord(text[i]) - ord(text[l])) % 26
             print(f"Required total rotation between {l} and {i} = {required_rot}")
-            sl = cipher[l:i]
+            sl = cipher_slice[l:i]
             print("Slice", sl)
 
             counts = {}
@@ -173,7 +172,10 @@ def build_rotation_matrix(cipher_list, text, offset):
             last_occurrence_of[word] = i
         return(matrix, unique_words)
 
-    (matrix, unique_words) = build_initial_matrix(text, cipher_list, offset)
+    (text, offset) = text_offset_list[0]
+    assert(len(text) <= len(cipher_list) - offset)  # Make sure we don't fall off the end of the cipher
+    cipher_slice = cipher_list[offset:len(text) + offset]
+    (matrix, unique_words) = build_initial_matrix(text, cipher_slice)
     print("unique words:", unique_words)
     print("Initial matrix:")
     print_matrix(matrix, unique_words)
@@ -182,3 +184,6 @@ def build_rotation_matrix(cipher_list, text, offset):
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
     print(f"{result_str} reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
     return(known_rotations if result == True else None)
+
+def build_rotation_matrix(cipher_list, text, offset):
+    return build_rotation_matrix_new(cipher_list, ((text, offset), (None, None)))
