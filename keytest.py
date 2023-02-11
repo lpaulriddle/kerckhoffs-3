@@ -96,8 +96,14 @@ def build_initial_key(matrix_rotations):
     return rotations
 
 (cipher_words, cipher_list) = read_cipher("k2.txt", True)
-matrix_rotations = build_rotation_matrix(cipher_list, 'congratulationsyouareacryptographere', 0)
-print("-------")
-if matrix_rotations != None:
-    rotations = build_initial_key(matrix_rotations)
-    print(f"rotations {rotations}")
+plaintext = 'congratulationsyouareacryptographere'
+good_rots = 0
+for x in range(len(cipher_list) - len(plaintext)):
+    print(f"rotation {x}")
+    matrix_rotations = build_rotation_matrix(cipher_list, plaintext, x)
+    print("-------")
+    if matrix_rotations != None:
+        good_rots += 1
+        rotations = build_initial_key(matrix_rotations)
+        print(f"rotations {rotations}")
+print(f"{good_rots} good offsets")
