@@ -136,13 +136,11 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
             #    print("aah.. no..")
             line_no += 1
 
-    def build_initial_matrix(text, cipher_slice):
+    def build_initial_matrix(text, cipher_slice, unique_words):
         assert(len(cipher_slice) == len(text))
         last_occurrence_of = {}
-        unique_words = list(set(cipher_slice))
-        unique_words.sort()
-        print(f"cipher slice: {cipher_slice}")
-        print(f"cipher slice has {len(text)} total words ({len(unique_words)} unique)")
+        print(f"cipher slice: {cipher_slice} ({len(text)} total words)")
+        #print(f"cipher slice has {len(text)} total words ({len(unique_words)} unique)")
         matrix = []
         for i in range(len(text)):
             word = cipher_slice[i]
@@ -170,12 +168,19 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
             matrix_row.append(required_rot)
             matrix.append(matrix_row)
             last_occurrence_of[word] = i
-        return(matrix, unique_words)
+        return matrix
 
     (text, offset) = text_offset_list[0]
     assert(len(text) <= len(cipher_list) - offset)  # Make sure we don't fall off the end of the cipher
     cipher_slice = cipher_list[offset:len(text) + offset]
-    (matrix, unique_words) = build_initial_matrix(text, cipher_slice)
+
+    #
+    # unique_words has to be the superset of unique words in every slice, because the columns need to be
+    # consistent across all the matrices we generate
+    #
+    unique_words = list(set(cipher_slice))
+    unique_words.sort()
+    matrix = build_initial_matrix(text, cipher_slice, unique_words)
     print("unique words:", unique_words)
     print("Initial matrix:")
     print_matrix(matrix, unique_words)
