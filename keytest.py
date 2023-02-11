@@ -104,7 +104,8 @@ def build_initial_key(matrix_rotations):
     return rotations
 
 (cipher_words, cipher_list) = read_cipher("k2.txt", True)
-plaintext = 'congratulationsyouareacryptographere'
+#plaintext = 'congratulationsyouareacryptographere'
+plaintext = 'confusingididntwantanynumbersorcardin'
 #plaintext = 'westseventysixdegreesfiftyonepoint'
 good_rots = 0
 for x in range(len(cipher_list) - len(plaintext)):
