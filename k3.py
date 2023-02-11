@@ -127,7 +127,7 @@ def get_initial_rotation(key, word, known_rotations, oldrots):
     if word in known_rotations:
 
         # temp old code for comparison
-        old_result = get_valid_rotation(key, word)
+        #old_result = get_valid_rotation(key, word)
 
         #
         # In the event that we have multiple rows that contain the word, the same
@@ -178,18 +178,18 @@ def get_initial_rotation(key, word, known_rotations, oldrots):
                     if word_solution == None:
                         word_solution = solution
                     elif word_solution != solution:
-                        logging.debug(f"get_initial_rotation: conflicting rotation values for word {word} old_result {old_result}")
+                        logging.debug(f"get_initial_rotation: conflicting rotation values for word {word}; {word_solution} != {solution}")
                         exit(0) # TBD: handle this (probably by backtracking)
         if word_solution == None:
             logging.debug(f"get_initial_rotation: not enough variables known to calculate word {word}")
-            if old_result != None:
-                logging.debug("old_result mismatch word_solution {word_solution} old_result {old_result}")
-                exit(1)
+            #if old_result != None:
+            #    logging.debug("old_result mismatch word_solution {word_solution} old_result {old_result}")
+            #    exit(1)
             return None
         logging.debug(f"get_initial_rotation: computed rotation value for word {word} == {word_solution}")
-        if old_result != word_solution:
-            logging.debug("old_result mismatch word_solution {word_solution} old_result {old_result}")
-            exit(1)
+        #if old_result != word_solution:
+        #    logging.debug("old_result mismatch word_solution {word_solution} old_result {old_result}")
+        #    exit(1)
         return word_solution
 
     # Free/independent variable not in matrix (start at 0)
@@ -414,21 +414,22 @@ def fit_plaintext(cipher_list, text, offset):
         return p
     return None
 
-(cipher_words, cipher_list) = read_cipher("k3.txt", False)
+(cipher_words, cipher_list) = read_cipher("k2.txt", True)
 
 print("cipher_list:", cipher_list)
 print("Cipher length =", len(cipher_list))
 
 #text = 'congratulationsyouareacryptogr'
-#text = 'congratulationsyouareacryptographere'
+text = 'congratulationsyouareacryptographere'
 #text = 'congratulationsyouareacryptographerextraordinaire'
 #text = 'norththirtyninedegreestenpoint'
-text = 'westseventysixdegreesfiftyonepoint'
+#text = 'westseventysixdegreesfiftyonepoint'
 #text = 'cryptographerextraordinaire'
 #text = 'confusingididntwantanynum'
 #text = 'degreestenpoint'
 
-print(fit_plaintext(cipher_list, text, 414))
+print(fit_plaintext(cipher_list, text, 0))
+#print(fit_plaintext(cipher_list, text, 414))
 
 #for i in range(len(cipher_list) - len(text)):
 #    print(f"Fitting {text} at position {i}")
