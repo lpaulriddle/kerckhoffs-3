@@ -40,8 +40,13 @@ def calculate_multi_row_rotation(word, unknowns, rotations):
             if required_sum == None:
                 required_sum = r
             elif required_sum != r:
+
+                #
                 # If we've calculated a value from a previous row, any subsequent values we calculate
-                # must match it
+                # must match it. If not, then we have a conflict and need to backtrack somehow.
+                # Assuming the code is correct, the matrix is properly reduced, and we work on
+                # unknown columns from right to left, this condition doesn't seem to happen.
+                #
                 raise Exception(f"Multi-row equation mismatch: {required_sum} != {r} for {unknowns}")
     print(f"Multi row calc {required_sum}")
     return required_sum
@@ -78,6 +83,7 @@ def build_initial_key(matrix_rotations):
 
     pos = 0
     rotations = known_rotations.copy()
+    guessed_rotations = []
 
     while pos < len(unique_words):
         val = unique_words[pos]
@@ -90,13 +96,16 @@ def build_initial_key(matrix_rotations):
             # TBD- Need to mark as calculated or guessed for backtracking purposes
             if r == None:
                 r = 0
+                guessed_rotations.append(val)
             rotations[val] = r
         print(f"position {pos} rots {rotations}")
         pos += 1
+    print(f"guessed_rotations {guessed_rotations}")
     return rotations
 
 (cipher_words, cipher_list) = read_cipher("k2.txt", True)
 plaintext = 'congratulationsyouareacryptographere'
+#plaintext = 'westseventysixdegreesfiftyonepoint'
 good_rots = 0
 for x in range(len(cipher_list) - len(plaintext)):
     print(f"rotation {x}")
