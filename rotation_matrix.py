@@ -189,11 +189,16 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
     unique_words.sort()
     print("unique words:", unique_words)
 
+    matrix = []
+    
     for (text, cipher_slice) in zip([i[0] for i in text_offset_list], cipher_slices):
-        matrix = build_initial_matrix(text, cipher_slice, unique_words)
+        partial_matrix = build_initial_matrix(text, cipher_slice, unique_words)
         print(f"Initial matrix for '{text}':")
-        print_matrix(matrix, unique_words)
+        print_matrix(partial_matrix, unique_words)
+        matrix.extend(partial_matrix)
 
+    print("Full matrix before row reduction:")
+    print_matrix(matrix, unique_words)
     result = gauss_jordan_reduce(matrix, unique_words)
     result_str = 'Good' if result == True else 'Bad'
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
