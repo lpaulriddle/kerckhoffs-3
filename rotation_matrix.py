@@ -92,6 +92,9 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
             #print("After %d iteration(s), matrix now:" % (row_index+1))
             #print_matrix(mat, words)
 
+        # Can't have a non-integer rotation value
+        if (good_matrix == True) and any(not(row[-1].is_integer()) for row in matrix):
+            good_matrix = False
         print("Reduced matrix:")
         print_matrix(mat,words)
         return(good_matrix)
@@ -200,10 +203,12 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
     print("Full matrix before row reduction:")
     print_matrix(matrix, unique_words)
     result = gauss_jordan_reduce(matrix, unique_words)
-    result_str = 'Good' if result == True else 'Bad'
+    if result == False:
+        print(f"Bad reduction at offset {offset}")
+        return None
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
-    print(f"{result_str} reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
-    return(known_rotations if result == True else None)
+    print(f"Good reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
+    return known_rotations
 
 def build_rotation_matrix(cipher_list, text, offset):
     text_offset_list = [(text, offset)]
