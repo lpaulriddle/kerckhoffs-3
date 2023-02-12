@@ -170,20 +170,30 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
             last_occurrence_of[word] = i
         return matrix
 
-    (text, offset) = text_offset_list[0]
-    assert(len(text) <= len(cipher_list) - offset)  # Make sure we don't fall off the end of the cipher
-    cipher_slice = cipher_list[offset:len(text) + offset]
-
     #
     # unique_words has to be the superset of unique words in every slice, because the columns need to be
     # consistent across all the matrices we generate
+    # TBD: probably can skip this step and just use the entire cipher alphabet, but let's see if we can
+    # get this working at all first...
     #
-    unique_words = list(set(cipher_slice))
+    unique_words = []
+    cipher_slices = []
+    for (text, offset) in text_offset_list:
+        # Make sure we don't fall off the end of the cipher.
+        # We also don't want any slices to overlap, but that part is left as an exercise to the caller ;)
+        assert(len(text) <= len(cipher_list) - offset)
+        cipher_slice = cipher_list[offset:len(text) + offset]
+        cipher_slices.append(cipher_slice)
+        unique_words.extend(cipher_slice)
+    unique_words = list(set(unique_words))
     unique_words.sort()
-    matrix = build_initial_matrix(text, cipher_slice, unique_words)
     print("unique words:", unique_words)
-    print("Initial matrix:")
-    print_matrix(matrix, unique_words)
+
+    for (text, cipher_slice) in zip([i[0] for i in text_offset_list], cipher_slices):
+        matrix = build_initial_matrix(text, cipher_slice, unique_words)
+        print(f"Initial matrix for '{text}':")
+        print_matrix(matrix, unique_words)
+
     result = gauss_jordan_reduce(matrix, unique_words)
     result_str = 'Good' if result == True else 'Bad'
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
@@ -191,4 +201,5 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
     return(known_rotations if result == True else None)
 
 def build_rotation_matrix(cipher_list, text, offset):
-    return build_rotation_matrix_new(cipher_list, ((text, offset), (None, None)))
+    text_offset_list = [(text, offset)]
+    return build_rotation_matrix_new(cipher_list, text_offset_list)
