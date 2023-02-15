@@ -204,10 +204,10 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
     print_matrix(matrix, unique_words)
     result = gauss_jordan_reduce(matrix, unique_words)
     if result == False:
-        print(f"Bad reduction at offset {offset}")
+        print(f"Bad reduction for {text_offset_list}")
         return None
     known_rotations = get_computed_codeword_rotations(matrix, unique_words)
-    print(f"Good reduction at offset {offset} - {len(known_rotations)} computed rotations: {known_rotations}")
+    print(f"Good reduction for {text_offset_list} - {len(known_rotations)} computed rotations: {known_rotations}")
     return known_rotations
 
 def build_rotation_matrix(cipher_list, text, offset):
