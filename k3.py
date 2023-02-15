@@ -29,7 +29,10 @@ from split_cipher import read_cipher, split_cipher
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stderr)
 
 # Backtracking reasons
-(KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX) = range(3)
+(KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, BACKTRACK_TO_INDEX, ROTATION_CALCULATION_CONFLICT) = range(4)
+
+class RotationCalculationException(Exception):
+    pass
 
 #
 # This is just ugly af, but seems to work...
@@ -179,7 +182,8 @@ def get_initial_rotation(key, word, known_rotations, oldrots):
                         word_solution = solution
                     elif word_solution != solution:
                         logging.debug(f"get_initial_rotation: conflicting rotation values for word {word}; {word_solution} != {solution}")
-                        exit(0) # TBD: handle this (probably by backtracking)
+                        raise RotationCalculationException()
+
         if word_solution == None:
             logging.debug(f"get_initial_rotation: not enough variables known to calculate word {word}")
             #if old_result != None:
@@ -241,7 +245,7 @@ def doit(cipher, known_rotations):
                     else:
                         pass  # Just keep going until we get to the target index
 
-                elif backtrack_status['reason'] == KEY_ROTATION_COLLISION or backtrack_status['reason'] == DUPLICATE_KEY_VALUE:
+                elif backtrack_status['reason'] in (KEY_ROTATION_COLLISION, DUPLICATE_KEY_VALUE, ROTATION_CALCULATION_CONFLICT):
                     if len(guessed_keys) < 1:
                         # This can happen if the only remaining keys were pre-calculated
                         logging.debug("No more guessed keys remain")
@@ -268,7 +272,7 @@ def doit(cipher, known_rotations):
                         logging.debug("Backtrack to index %d (first occurrence of word %s); current index %d" % (backtrack_index, most_recent_guessed_word, i))
                         backtrack_status = { 'reason': BACKTRACK_TO_INDEX, 'index': backtrack_index }
                 else:
-                    logging.error("Unhandled backtrack status %d" % backtrack_status)
+                    logging.error("Unhandled backtrack status %d" % backtrack_status['reason'])
                     break
 
             #
@@ -329,15 +333,21 @@ def doit(cipher, known_rotations):
             #
             # Calculate an initial rotation value (if possible) and add the word to the key
             #
-            rot_val = get_initial_rotation(key, cipher_word, known_rotations, oldrots)
-            if rot_val == None:
-                rot_val = 0
-                guessed_keys.append(cipher_word)
-            elif rot_val > 0:
-                current_rotation = (current_rotation + rot_val) % 26
+            try:
+                rot_val = get_initial_rotation(key, cipher_word, known_rotations, oldrots)
+                if rot_val == None:
+                    rot_val = 0
+                    guessed_keys.append(cipher_word)
+                elif rot_val > 0:
+                    current_rotation = (current_rotation + rot_val) % 26
+                elif rot_val < 0:
+                    logging.error(f"Negative rotation {rot_val} at index {i}?!")
+                    exit(1)
 
-            key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
-            logging.debug("Add key %s with char %s, rotation %d" % (cipher_word, key_char, rot_val))
+                key[cipher_word] = { 'root_char': key_char, 'rotation': rot_val, 'first_occurrence': i }
+                logging.debug("Add key %s with char %s, rotation %d" % (cipher_word, key_char, rot_val))
+            except RotationCalculationException:
+                backtrack_status = { 'reason': ROTATION_CALCULATION_CONFLICT }
 
         #
         # Backtrack if needed; otherwise, save state and keep going
