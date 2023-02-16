@@ -83,10 +83,8 @@ class Key:
         while pos < len(unique_words):
             val = unique_words[pos]
             print(f"doing {val}")
-            if val in known_rotations:
-                pass
-            else:
-                assert(val in unknown_rotations)
+            if val in unknown_rotations:
+                assert(val not in known_rotations)
                 r = self.calculate_rotation(val, unknown_rotations[val])
                 # TBD- Need to mark as calculated or guessed for backtracking purposes
                 if r == None:
