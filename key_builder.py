@@ -85,17 +85,18 @@ class Key:
 
         while pos < len(self.unique_words):
             val = self.unique_words[pos]
+            rotation = None
             print(f"doing {val}")
             if val in known_rotations:
-                self.rotations[val] = known_rotations[val]
+                rotation = known_rotations[val]
             elif val in unknown_rotations:
-                r = self.calculate_rotation(val, unknown_rotations[val])
+                rotation = self.calculate_rotation(val, unknown_rotations[val])
                 # TBD- Need to mark as calculated or guessed for backtracking purposes
-                if r == None:
-                    r = 0
+                if rotation == None:
+                    rotation = 0
                     self.guessed_rotations.append(val)
-                self.rotations[val] = r
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
+            self.rotations[val] = rotation
             print(f"position {pos} rots {self.rotations}")
             pos += 1
