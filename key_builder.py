@@ -1,3 +1,6 @@
+class KeyBuilderException(Exception):
+    pass
+
 class Key:
     def calculate_single_row_rotation(self, word, unknowns):
         rotation_sum = 0
@@ -53,10 +56,10 @@ class Key:
         # This gets sorted in the reduction code, so just need to return that somehow to avoid doing
         # it again here
         #
-        unique_words = list(matrix_rotations.keys())
-        unique_words.sort()
-        unique_words.reverse()
-        print("unique_words", unique_words)
+        self.unique_words = list(matrix_rotations.keys())
+        self.unique_words.sort()
+        self.unique_words.reverse()
+        print("unique_words", self.unique_words)
 
         #
         # Pull out keys we know for sure ahead of time
@@ -77,19 +80,22 @@ class Key:
         assert(len(known_rotations) + len(unknown_rotations)) == len(matrix_rotations)
 
         pos = 0
-        self.rotations = known_rotations.copy()
+        self.rotations = {}
         self.guessed_rotations = []
 
-        while pos < len(unique_words):
-            val = unique_words[pos]
+        while pos < len(self.unique_words):
+            val = self.unique_words[pos]
             print(f"doing {val}")
-            if val in unknown_rotations:
-                assert(val not in known_rotations)
+            if val in known_rotations:
+                self.rotations[val] = known_rotations[val]
+            elif val in unknown_rotations:
                 r = self.calculate_rotation(val, unknown_rotations[val])
                 # TBD- Need to mark as calculated or guessed for backtracking purposes
                 if r == None:
                     r = 0
                     self.guessed_rotations.append(val)
                 self.rotations[val] = r
+            else:
+                raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
             print(f"position {pos} rots {self.rotations}")
             pos += 1
