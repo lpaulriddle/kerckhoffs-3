@@ -74,6 +74,31 @@ class Key:
             print(f"position {pos} rots {self.rotations}")
             pos += 1
 
+    def next(self):
+        pos = len(self.unique_words) - 1
+        while (pos >= 0):
+            word = self.unique_words[pos]
+            rotation = self.rotations[word]
+            if (rotation['type'] == self.ROTATION_GUESSED):
+                rot_val = rotation['rotation'] + 1
+                if rot_val < 26:
+                    rotation['rotation'] = rot_val
+                    self.generate_key()
+                    return True
+                if rot_val == 26:
+                    print("TBD- max rot_val")
+                    return False
+                # This "should not happen"
+                raise KeyBuilderException(f"Guessed key val for {word} > 26")
+            # If type is not ROTATION_GUESSED, just remove the current word and continue backtracking
+            del self.rotations[word]
+            pos -= 1
+        else:
+            # No more guesses possible (either no guessed words, or
+            # exhausted all possible guessed values)
+            print("Exhausted all possible rotation combinations")
+            return False
+
     def __init__(self, matrix_rotations):
 
         #
