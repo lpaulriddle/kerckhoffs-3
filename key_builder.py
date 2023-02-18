@@ -2,7 +2,8 @@ class KeyBuilderException(Exception):
     pass
 
 class Key:
-    ( ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN ) = range(3)
+    #(ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = range(3)
+    (ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = ('calculated', 'guessed', 'known')
     def calculate_single_row_rotation(self, word, unknowns):
         rotation_sum = 0
         seen_ourselves = False
@@ -50,7 +51,7 @@ class Key:
         print(f"Multi row calc {required_sum}")
         return required_sum
 
-    def generate_key(self):
+    def generate(self):
         pos = len(self.rotations)
 
         while pos < len(self.unique_words):
@@ -83,14 +84,16 @@ class Key:
                 rot_val = rotation['rotation'] + 1
                 if rot_val < 26:
                     rotation['rotation'] = rot_val
-                    self.generate_key()
+                    self.generate()
                     return True
-                if rot_val == 26:
-                    print("TBD- max rot_val")
-                    return False
-                # This "should not happen"
-                raise KeyBuilderException(f"Guessed key val for {word} > 26")
-            # If type is not ROTATION_GUESSED, just remove the current word and continue backtracking
+                if rot_val > 26:
+                    # This "should not happen"
+                    raise KeyBuilderException(f"Guessed key val for {word} > 26")
+
+            #
+            # Rotation value == 26 or type is not ROTATION_GUESSED - remove the entry for the
+            # current word and backtrack, looking for the previous guessed rotation value
+            #
             del self.rotations[word]
             pos -= 1
         else:
@@ -131,4 +134,4 @@ class Key:
 
         pos = 0
         self.rotations = {}
-        self.generate_key()
+        self.generate()
