@@ -68,17 +68,17 @@ class Key:
         # in the matrix code somehow..
         #
         single_row_vars = dict([(a,b[0]) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) == 1])
-        known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
-        print("known_rotations", known_rotations)
+        self.known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
+        print("known_rotations", self.known_rotations)
 
         #
         # Now, pull out all the unknowns, which basically means "anything not in known_rotations"
         # This includes unknown rotations that appear in one or more rows of the matrix
         #
-        unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in known_rotations])
-        print("unknown_rotations", unknown_rotations)
+        self.unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in self.known_rotations])
+        print("unknown_rotations", self.unknown_rotations)
 
-        assert(len(known_rotations) + len(unknown_rotations)) == len(matrix_rotations)
+        assert(len(self.known_rotations) + len(self.unknown_rotations)) == len(matrix_rotations)
 
         pos = 0
         self.rotations = {}
@@ -88,11 +88,11 @@ class Key:
             self.rotations[val] = {}
             rotation = None
             print(f"doing {val}")
-            if val in known_rotations:
-                rotation = known_rotations[val]
+            if val in self.known_rotations:
+                rotation = self.known_rotations[val]
                 self.rotations[val]['type'] = self.ROTATION_KNOWN
-            elif val in unknown_rotations:
-                rotation = self.calculate_rotation(val, unknown_rotations[val])
+            elif val in self.unknown_rotations:
+                rotation = self.calculate_rotation(val, self.unknown_rotations[val])
                 # TBD- Need to mark as calculated or guessed for backtracking purposes
                 if rotation == None:
                     rotation = 0
