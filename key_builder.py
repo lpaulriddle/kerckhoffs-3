@@ -2,6 +2,7 @@ class KeyBuilderException(Exception):
     pass
 
 class Key:
+    ( ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN ) = range(3)
     def calculate_single_row_rotation(self, word, unknowns):
         rotation_sum = 0
         seen_ourselves = False
@@ -14,7 +15,7 @@ class Key:
                 continue
             if dependent_word in self.rotations:
                 # Keep track of the running sum of other rotations in the row
-                rotation_sum += multiplier * self.rotations[dependent_word]
+                rotation_sum += multiplier * self.rotations[dependent_word]['rotation']
                 continue
             print(f"Not enough known rotations to calculate {word}")
             return None
@@ -81,22 +82,25 @@ class Key:
 
         pos = 0
         self.rotations = {}
-        self.guessed_rotations = []
 
         while pos < len(self.unique_words):
             val = self.unique_words[pos]
+            self.rotations[val] = {}
             rotation = None
             print(f"doing {val}")
             if val in known_rotations:
                 rotation = known_rotations[val]
+                self.rotations[val]['type'] = self.ROTATION_KNOWN
             elif val in unknown_rotations:
                 rotation = self.calculate_rotation(val, unknown_rotations[val])
                 # TBD- Need to mark as calculated or guessed for backtracking purposes
                 if rotation == None:
                     rotation = 0
-                    self.guessed_rotations.append(val)
+                    self.rotations[val]['type'] = self.ROTATION_GUESSED
+                else:
+                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
-            self.rotations[val] = rotation
+            self.rotations[val]['rotation'] = rotation
             print(f"position {pos} rots {self.rotations}")
             pos += 1
