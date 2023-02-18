@@ -50,6 +50,30 @@ class Key:
         print(f"Multi row calc {required_sum}")
         return required_sum
 
+    def generate_key(self):
+        pos = len(self.rotations)
+
+        while pos < len(self.unique_words):
+            val = self.unique_words[pos]
+            assert(val not in self.rotations)
+            self.rotations[val] = {}
+            rotation = None
+            if val in self.known_rotations:
+                rotation = self.known_rotations[val]
+                self.rotations[val]['type'] = self.ROTATION_KNOWN
+            elif val in self.unknown_rotations:
+                rotation = self.calculate_rotation(val, self.unknown_rotations[val])
+                if rotation == None:
+                    rotation = 0
+                    self.rotations[val]['type'] = self.ROTATION_GUESSED
+                else:
+                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
+            else:
+                raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
+            self.rotations[val]['rotation'] = rotation
+            print(f"position {pos} rots {self.rotations}")
+            pos += 1
+
     def __init__(self, matrix_rotations):
 
         #
@@ -82,25 +106,4 @@ class Key:
 
         pos = 0
         self.rotations = {}
-
-        while pos < len(self.unique_words):
-            val = self.unique_words[pos]
-            self.rotations[val] = {}
-            rotation = None
-            print(f"doing {val}")
-            if val in self.known_rotations:
-                rotation = self.known_rotations[val]
-                self.rotations[val]['type'] = self.ROTATION_KNOWN
-            elif val in self.unknown_rotations:
-                rotation = self.calculate_rotation(val, self.unknown_rotations[val])
-                # TBD- Need to mark as calculated or guessed for backtracking purposes
-                if rotation == None:
-                    rotation = 0
-                    self.rotations[val]['type'] = self.ROTATION_GUESSED
-                else:
-                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
-            else:
-                raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
-            self.rotations[val]['rotation'] = rotation
-            print(f"position {pos} rots {self.rotations}")
-            pos += 1
+        self.generate_key()
