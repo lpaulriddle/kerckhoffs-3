@@ -102,6 +102,53 @@ class Key:
             print("Exhausted all possible rotation combinations")
             return False
 
+    def fit_plaintext(self, cipher_slice, plaintext):
+        running_rotation = 0
+        plaintext_char_dict = {}
+        used_key_char_dict = {}
+        for (word, ch) in zip(cipher_slice, plaintext):
+            if word not in self.rotations:
+                print(f"word {word} not in key - finishing")
+                return True
+            rot_val = self.rotations[word]['rotation']
+            if word in plaintext_char_dict:
+                key_ch = plaintext_char_dict[word]
+                expected_pt_ch = chr((ord(key_ch) - running_rotation - ord('a')) % 26 + ord('a'))
+                print(f"Found {word} keychar {key_ch} pt char {ch} (expected {expected_pt_ch})")
+
+                #
+                # Key rotation mismatch- This should never occur if the plaintext matches the cipher
+                # slice and the key satisfies the matrix
+                #
+                if ch != expected_pt_ch:
+                    print("Key mismatch: plaintext char '{ch}' != expected char '{expected_pt_ch}'")
+                    return False
+            else:
+                key_ch = chr((ord(ch) + running_rotation - ord('a')) % 26 + ord('a'))
+
+                #
+                # Each letter can appear in the key only once. We could just pull
+                # plaintext_char_dict.values() here and do a linear search, but a separate dict
+                # seemed more efficent, and we can also display the previously mapped cipher word.
+                #
+                # Unlike rotation mismatches, this does occur a *lot* with a matching key and
+                # sufficiently long plaintext sample. For example, matching 32 characters of known
+                # plaintext against the beginning of the Kerckhoffs 2 cipher yielded a total of
+                # 456,976 possible keys (26^4), of which only 10,296 had no dups. I wonder if it
+                # would be possible to determine this mathematically somehow instead of iteratively.
+                #
+                if key_ch in used_key_char_dict:
+                    print(f"Duplicate key_char: '{key_ch}' already mapped to word '{used_key_char_dict[key_ch]}'")
+                    return False
+                used_key_char_dict[key_ch] = word
+                plaintext_char_dict[word] = key_ch
+                print(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation}")
+
+            running_rotation = (running_rotation - rot_val) % 26
+            print(f"Running rotation = {running_rotation}")
+        print("Successful fit")
+        return True
+
     def __init__(self, matrix_rotations):
 
         #
