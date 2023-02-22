@@ -4,15 +4,15 @@ from key_builder import Key
 from rotation_matrix import build_rotation_matrix, build_rotation_matrix_new
 from cipher import Cipher
 
-cipher = Cipher("k3.txt", False)
-plaintext1 = 'norththirtyninedegreestenpoint'
-plaintext2 = 'westseventysixdegreesfiftyonepoint'
-matrix_rotations = build_rotation_matrix_new(cipher.word_list, [(plaintext1, 1), (plaintext2, 147)])
+#cipher = Cipher("k3.txt", False)
+#slice1 = cipher.known_plaintext_slice('norththirtyninedegreestenpoint', 1)
+#slice2 = cipher.known_plaintext_slice('westseventysixdegreesfiftyonepoint', 147)
+#matrix_rotations = build_rotation_matrix_new(cipher.word_list, ((slice1.plaintext, 1), (slice2.plaintext, 147)))
 
-#cipher = Cipher("k2.txt", True)
-#plaintext1 = 'congratulationsyouareacryptograph'
-#plaintext2 = 'thecacheisattheweirdstumpthisis'
-#matrix_rotations = build_rotation_matrix_new(cipher.word_list, ((plaintext1, 0), (plaintext2, 245)))
+cipher = Cipher("k2.txt", True)
+slice1 = cipher.known_plaintext_slice('congratulationsyouareacryptograph', 0)
+slice2 = cipher.known_plaintext_slice('thecacheisattheweirdstumpthisis', 245)
+matrix_rotations = build_rotation_matrix_new(cipher.word_list, ((slice1.plaintext, 0), (slice2.plaintext, 245)))
 
 #cipher = Cipher("k2.txt", True)
 #plaintext = 'congratulationsyouareacryptograph'
@@ -24,10 +24,9 @@ if matrix_rotations != None:
     good_count = 0
     bad_count = 0
     key.stats()
-#    exit(0)
+
     while True:
-#        if key.fit_plaintext(cipher.word_list[245:], plaintext2) == True:
-        if (key.fit_plaintext(cipher.word_list[1:], plaintext1) == True) and (key.fit_plaintext(cipher.word_list[147:], plaintext2) == True):
+        if (key.fit_plaintext(slice1) == True) and (key.fit_plaintext(slice2) == True):
             good_count += 1
         else:
             bad_count += 1
@@ -35,4 +34,3 @@ if matrix_rotations != None:
         if key.next() == False:
             break
         print(f"next rotation {key.rotations}")
-

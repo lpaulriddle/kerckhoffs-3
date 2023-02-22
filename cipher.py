@@ -1,4 +1,15 @@
 class Cipher:
+    class KnownPlaintextSlice:
+        def __init__(self, plaintext, cipher_slice):
+            self.plaintext = plaintext
+            self.cipher_slice = cipher_slice
+
+        def __iter__(self):
+            return zip(self.cipher_slice, self.plaintext)
+
+    def known_plaintext_slice(self, text, cipher_index):
+        return self.KnownPlaintextSlice(text, self.word_list[cipher_index:cipher_index+len(text)])
+
     def __init__(self, fname, assume_codeword_lengths):
         def split_cipher(cipher_words, cipher_text):
             assert(len(cipher_words) == 26)

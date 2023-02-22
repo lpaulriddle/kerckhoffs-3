@@ -102,11 +102,11 @@ class Key:
             print("Exhausted all possible rotation combinations")
             return False
 
-    def fit_plaintext(self, cipher_slice, plaintext):
+    def fit_plaintext(self, known_plaintext_slice):
         running_rotation = 0
         plaintext_char_dict = {}
         used_key_char_dict = {}
-        for (word, ch) in zip(cipher_slice, plaintext):
+        for (word, ch) in known_plaintext_slice:
             if word not in self.rotations:
                 print(f"word {word} not in key - finishing")
                 return True
