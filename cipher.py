@@ -124,3 +124,6 @@ class Cipher:
 
         (self.unique_words, self.word_list) = read_cipher(fname, assume_codeword_lengths)
         self.unique_words.sort()
+
+    def __len__(self):
+        return len(self.word_list)
