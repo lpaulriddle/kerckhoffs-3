@@ -1,14 +1,15 @@
 class Cipher:
     class KnownPlaintextSlice:
-        def __init__(self, plaintext, cipher_slice):
+        def __init__(self, cipher, plaintext, cipher_index):
             self.plaintext = plaintext
-            self.cipher_slice = cipher_slice
+            self.cipher_slice = cipher.word_list[cipher_index:cipher_index+len(plaintext)]
+            self.cipher_index = cipher_index
 
         def __iter__(self):
             return zip(self.cipher_slice, self.plaintext)
 
-    def known_plaintext_slice(self, text, cipher_index):
-        return self.KnownPlaintextSlice(text, self.word_list[cipher_index:cipher_index+len(text)])
+    def known_plaintext_slice(self, plaintext, cipher_index):
+        return self.KnownPlaintextSlice(self, plaintext, cipher_index)
 
     def __init__(self, fname, assume_codeword_lengths):
         def split_cipher(cipher_words, cipher_text):
