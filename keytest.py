@@ -10,6 +10,8 @@ plaintext2 = 'westseventysixdegreesfiftyonepoint'
 l1 = len(plaintext1)
 l2 = len(plaintext2)
 
+count_dict = {}
+
 for i1 in range(0, len(cipher) - l1 + 1):
     #slice1 = cipher.known_plaintext_slice(plaintext1, i1)
     for i2 in range(0, len(cipher) - l2 + 1):
@@ -20,9 +22,13 @@ for i1 in range(0, len(cipher) - l1 + 1):
         matrix_rotations = build_rotation_matrix_new(cipher.word_list, [(plaintext1, i1), (plaintext2, i2)])
         if matrix_rotations:
             k = Key(matrix_rotations)
-            print(k.stats())
+            s = k.stats()
+            try:
+                count_dict[s['num_possible_keys']] += 1
+            except KeyError:
+                count_dict[s['num_possible_keys']] = 1
             print("...") # Breakpoint placeholder
-print(cipher.word_list)
+print("slice1",count_dict)
 #for thing in range(36,106):
 #    print(f"doing {thing}")
 #    matrix_rotations = build_rotation_matrix_new(cipher_list, [('congratulationsyouareacryptographere', 0),('confusingididntwantanynumbersorcardin', thing)]) # 105
