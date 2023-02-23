@@ -23,7 +23,7 @@ if matrix_rotations != None:
     print(f"initial rotations {key.rotations}")
     good_count = 0
     bad_count = 0
-    key.stats()
+    print("Stats:",key.stats())
 
     while True:
         if (key.fit_plaintext(slice1) == True) and (key.fit_plaintext(slice2) == True):

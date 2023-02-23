@@ -151,12 +151,13 @@ class Key:
 
     def stats(self):
         num_rotations = len(self.rotations)
-        print(f"{num_rotations} total rotations out of 26")
-        print(f"{len(self.known_rotations)} known rotations")
-        num_guessed = len([x['type'] for x in self.rotations.values() if x['type'] == self.ROTATION_GUESSED])
-        print(f"{num_guessed} guessed rotations")
-        if num_guessed > 0:
-            print(f"{26 ** num_guessed} possible keys")
+        num_known_rotations = len(self.known_rotations)
+        num_guessed_rotations = len([x['type'] for x in self.rotations.values() if x['type'] == self.ROTATION_GUESSED])
+        num_possible_keys = 26 ** num_guessed_rotations
+        return {'num_rotations': num_rotations,
+                'num_known_rotations': num_known_rotations,
+                'num_guessed_rotations': num_guessed_rotations,
+                'num_possible_keys': num_possible_keys}
 
     def __init__(self, matrix_rotations):
 
