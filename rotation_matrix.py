@@ -176,8 +176,8 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
     #
     # unique_words has to be the superset of unique words in every slice, because the columns need to be
     # consistent across all the matrices we generate
-    # TBD: probably can skip this step and just use the entire cipher alphabet, but let's see if we can
-    # get this working at all first...
+    # TBD: probably can skip this step and just use the entire cipher alphabet (cipher.unique_words),
+    # but let's see if we can get this working at all first...
     #
     unique_words = []
     cipher_slices = []
