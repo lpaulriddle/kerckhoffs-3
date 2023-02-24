@@ -4,11 +4,23 @@ from key_builder import Key
 from rotation_matrix import build_rotation_matrix, build_rotation_matrix_new
 from cipher import Cipher
 
-cipher = Cipher("k3.txt", False)
-plaintext1 = 'norththirtyninedegreestenpoint'
-plaintext2 = 'westseventysixdegreesfiftyonepoint'
+cipher_filename = "k2.txt"
+cipher_flag = True
+plaintext1 = 'extraordinairetosolveswapanddo'     # 35
+plaintext2 = 'plaintextforuseascribsatleastforth' # 170
+
+#cipher_filename = "k3.txt"
+#cipher_flag = False
+#plaintext1 = 'norththirtyninedegreestenpoint'
+#plaintext2 = 'westseventysixdegreesfiftyonepoint'
+
+cipher = Cipher(cipher_filename, cipher_flag)
 l1 = len(plaintext1)
 l2 = len(plaintext2)
+
+print(f"numkeys:{cipher_filename}")
+print(f"numkeys:{plaintext1}")
+print(f"numkeys:{plaintext2}")
 
 count_dict = {}
 
@@ -21,14 +33,16 @@ for i1 in range(0, len(cipher) - l1 + 1):
         print(f"slice1 {i1}-{i1+l1} slice2 {i2}-{i2+l2}")
         matrix_rotations = build_rotation_matrix_new(cipher.word_list, [(plaintext1, i1), (plaintext2, i2)])
         if matrix_rotations:
+            #
+            # Need to store: number of possible keys, the key object itself, and the plaintext indices
+            # Dictionary of lists of {num_possible_keys: [(i1, i2), Key]} ?
+            #
             k = Key(matrix_rotations)
             s = k.stats()
+            num_possible_keys = s['num_possible_keys']
             try:
-                count_dict[s['num_possible_keys']] += 1
+                count_dict[num_possible_keys] += 1
             except KeyError:
-                count_dict[s['num_possible_keys']] = 1
-            print("...") # Breakpoint placeholder
+                count_dict[num_possible_keys] = 1
+            print(f"numkeys:{i1}:{i2}:{num_possible_keys}")
 print("slice1",count_dict)
-#for thing in range(36,106):
-#    print(f"doing {thing}")
-#    matrix_rotations = build_rotation_matrix_new(cipher_list, [('congratulationsyouareacryptographere', 0),('confusingididntwantanynumbersorcardin', thing)]) # 105
