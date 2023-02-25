@@ -1,6 +1,9 @@
 class KeyBuilderException(Exception):
     pass
 
+class RotationCalculationException(Exception):
+    pass
+
 class Key:
     #(ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = range(3)
     (ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = ('calculated', 'guessed', 'known')
@@ -22,7 +25,8 @@ class Key:
             return None
         assert(seen_ourselves == True)
         calculated_rotation = answer - rotation_sum
-        assert(calculated_rotation.is_integer())
+        if not calculated_rotation.is_integer():
+            raise RotationCalculationException(f"non-integer rotation {calculated_rotation} for word {word}, unknowns {unknowns}")
         calculated_rotation = int(calculated_rotation) % 26
         print(f"Calculated rotation for {word} == {calculated_rotation}")
         return calculated_rotation
@@ -53,6 +57,7 @@ class Key:
 
     def generate(self):
         pos = len(self.rotations)
+        starting_pos = pos
 
         while pos < len(self.unique_words):
             val = self.unique_words[pos]
@@ -63,17 +68,33 @@ class Key:
                 rotation = self.known_rotations[val]
                 self.rotations[val]['type'] = self.ROTATION_KNOWN
             elif val in self.unknown_rotations:
-                rotation = self.calculate_rotation(val, self.unknown_rotations[val])
-                if rotation == None:
-                    rotation = 0
-                    self.rotations[val]['type'] = self.ROTATION_GUESSED
-                else:
-                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
+                try:
+                    rotation = self.calculate_rotation(val, self.unknown_rotations[val])
+                    if rotation == None:
+                        rotation = 0
+                        self.rotations[val]['type'] = self.ROTATION_GUESSED
+                    else:
+                        self.rotations[val]['type'] = self.ROTATION_CALCULATED
+                except RotationCalculationException:
+
+                    #
+                    # Right now, this only happens when the calculated rotation is not an
+                    # integer, in which case the key is invalid and we just want to skip it.
+                    # Becaue of how the code currently works, this means that we need to
+                    # delete everything we computed here and return to the caller with a
+                    # "clean slate" so that everything will get re-computed properly after
+                    # incrementing the guessed value.
+                    # 
+                    for i in range(starting_pos, pos + 1):
+                        del self.rotations[self.unique_words[i]]
+                    return False
+                    
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
             self.rotations[val]['rotation'] = rotation
             print(f"position {pos} rots {self.rotations}")
             pos += 1
+        return True
 
     def next(self):
         pos = len(self.unique_words) - 1
@@ -82,10 +103,12 @@ class Key:
             rotation = self.rotations[word]
             if (rotation['type'] == self.ROTATION_GUESSED):
                 rot_val = rotation['rotation'] + 1
-                if rot_val < 26:
+                while rot_val < 26:
                     rotation['rotation'] = rot_val
-                    self.generate()
-                    return True
+                    if self.generate() == True:
+                        return True
+                    # That rot_val didn't work, so try incrementing by one
+                    rot_val += 1
                 if rot_val > 26:
                     # This "should not happen"
                     raise KeyBuilderException(f"Guessed key val for {word} > 26")
@@ -191,4 +214,7 @@ class Key:
 
         pos = 0
         self.rotations = {}
-        self.generate()
+        if not self.generate():
+            print("TBD- initial generation failed")
+            exit(0)
+
