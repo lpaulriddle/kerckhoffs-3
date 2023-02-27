@@ -127,15 +127,15 @@ class Key:
 
     def fit_plaintext(self, known_plaintext_slice):
         running_rotation = 0
-        plaintext_char_dict = {}
+        self.plaintext_char_dict = {}
         used_key_char_dict = {}
         for (word, ch) in known_plaintext_slice:
             if word not in self.rotations:
                 print(f"word {word} not in key - finishing")
                 return True
             rot_val = self.rotations[word]['rotation']
-            if word in plaintext_char_dict:
-                key_ch = plaintext_char_dict[word]
+            if word in self.plaintext_char_dict:
+                key_ch = self.plaintext_char_dict[word]
                 expected_pt_ch = chr((ord(key_ch) - running_rotation - ord('a')) % 26 + ord('a'))
                 print(f"Found {word} keychar {key_ch} pt char {ch} (expected {expected_pt_ch})")
 
@@ -164,7 +164,7 @@ class Key:
                     print(f"Duplicate key_char: '{key_ch}' already mapped to word '{used_key_char_dict[key_ch]}'")
                     return False
                 used_key_char_dict[key_ch] = word
-                plaintext_char_dict[word] = key_ch
+                self.plaintext_char_dict[word] = key_ch
                 print(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation}")
 
             running_rotation = (running_rotation - rot_val) % 26
@@ -217,4 +217,4 @@ class Key:
         if not self.generate():
             print("TBD- initial generation failed")
             exit(0)
-
+        self.plaintext_char_dict = {}
