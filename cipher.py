@@ -11,7 +11,7 @@ class Cipher:
     def known_plaintext_slice(self, plaintext, cipher_index):
         return self.KnownPlaintextSlice(self, plaintext, cipher_index)
 
-    def __init__(self, fname, assume_codeword_lengths):
+    def __init__(self, fname):
         def split_cipher(cipher_words, cipher_text):
             assert(len(cipher_words) == 26)
             cipher_list = []
@@ -34,7 +34,7 @@ class Cipher:
             assert(cipher_text == ''.join(cipher_list))
             return(cipher_list)
 
-        def read_cipher(fname, assume_codeword_lengths):
+        def read_cipher(fname):
             raw_cipher = ''
 
             #
@@ -106,6 +106,11 @@ class Cipher:
 
             cipher_words = []
             with open(fname, 'r') as file:
+                assume_codeword_lengths = file.readline().rstrip().lower()
+                if assume_codeword_lengths in ('true', 'yes', 't', 'y'):
+                    assume_codeword_lengths = True
+                else:
+                    assume_codeword_lengths = False
                 raw_cipher = file.read().rstrip()
                 r = raw_cipher
 
@@ -123,7 +128,7 @@ class Cipher:
 
             return(cipher_words, split_cipher(cipher_words, r))
 
-        (self.unique_words, self.word_list) = read_cipher(fname, assume_codeword_lengths)
+        (self.unique_words, self.word_list) = read_cipher(fname)
         self.unique_words.sort()
 
     def __len__(self):

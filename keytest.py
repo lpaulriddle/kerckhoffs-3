@@ -4,17 +4,15 @@ from key_builder import Key
 from rotation_matrix import build_rotation_matrix, build_rotation_matrix_new
 from cipher import Cipher
 
-cipher_filename = "k2.txt"
-cipher_flag = True
-plaintext1 = 'extraordinairetosolveswapanddo'     # 35
-plaintext2 = 'plaintextforuseascribsatleastforth' # 170
+#cipher_filename = "k2.txt"
+#plaintext1 = 'extraordinairetosolveswapanddo'     # 35
+#plaintext2 = 'plaintextforuseascribsatleastforth' # 170
 
-#cipher_filename = "k3.txt"
-#cipher_flag = False
-#plaintext1 = 'norththirtyninedegreestenpoint'
-#plaintext2 = 'westseventysixdegreesfiftyonepoint'
+cipher_filename = "k3.txt"
+plaintext1 = 'norththirtyninedegreestenpoint'
+plaintext2 = 'westseventysixdegreesfiftyonepoint'
 
-cipher = Cipher(cipher_filename, cipher_flag)
+cipher = Cipher(cipher_filename)
 l1 = len(plaintext1)
 l2 = len(plaintext2)
 
