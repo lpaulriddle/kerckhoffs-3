@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from key_builder import Key
+from key_builder import KeyBuilder
 from rotation_matrix import build_rotation_matrix, build_rotation_matrix_new
 from cipher import Cipher
 
@@ -19,7 +19,7 @@ matrix_rotations = build_rotation_matrix_new(cipher.word_list, ((slice1.plaintex
 #matrix_rotations = build_rotation_matrix(cipher.word_list, plaintext, 0)
 
 if matrix_rotations != None:
-    key = Key(matrix_rotations)
+    key = KeyBuilder(matrix_rotations)
     print(f"initial rotations {key.rotations}")
     good_count = 0
     bad_count = 0

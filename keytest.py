@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from key_builder import Key
+from key_builder import KeyBuilder
 from rotation_matrix import build_rotation_matrix, build_rotation_matrix_new
 from cipher import Cipher
 
@@ -35,7 +35,7 @@ for i1 in range(0, len(cipher) - l1 + 1):
             # Need to store: number of possible keys, the key object itself, and the plaintext indices
             # Dictionary of lists of {num_possible_keys: [(i1, i2), Key]} ?
             #
-            k = Key(matrix_rotations)
+            k = KeyBuilder(matrix_rotations)
             s = k.stats()
             num_possible_keys = s['num_possible_keys']
             try:

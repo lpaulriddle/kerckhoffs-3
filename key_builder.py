@@ -4,7 +4,7 @@ class KeyBuilderException(Exception):
 class RotationCalculationException(Exception):
     pass
 
-class Key:
+class KeyBuilder:
     #(ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = range(3)
     (ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = ('calculated', 'guessed', 'known')
     def calculate_single_row_rotation(self, word, unknowns):
