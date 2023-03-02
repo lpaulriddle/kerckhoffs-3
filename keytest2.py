@@ -19,18 +19,20 @@ matrix_rotations = build_rotation_matrix_new(cipher.word_list, ((slice1.plaintex
 #matrix_rotations = build_rotation_matrix(cipher.word_list, plaintext, 0)
 
 if matrix_rotations != None:
-    key = KeyBuilder(matrix_rotations)
-    print(f"initial rotations {key.rotations}")
+    key_builder = KeyBuilder(matrix_rotations)
+    print(f"initial rotations {key_builder.rotations}")
     good_count = 0
     bad_count = 0
-    print("Stats:",key.stats())
+    print("Stats:",key_builder.stats())
 
     while True:
-        if (key.fit_plaintext(slice1) == True) and (key.fit_plaintext(slice2) == True):
+        if (key_builder.fit_plaintext(slice2) == True) and (key_builder.fit_plaintext(slice1) == True):
+            key = key_builder.key()
+            print("decryption:",key.decrypt(cipher.word_list))
             good_count += 1
         else:
             bad_count += 1
         print(f"good_count {good_count} bad_count {bad_count}")
-        if key.next() == False:
+        if key_builder.next() == False:
             break
-        print(f"next rotation {key.rotations}")
+        print(f"next rotation {key_builder.rotations}")
