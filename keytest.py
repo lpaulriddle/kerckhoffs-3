@@ -43,4 +43,5 @@ for i1 in range(0, len(cipher) - l1 + 1):
             except KeyError:
                 count_dict[num_possible_keys] = 1
             print(f"numkeys:{i1}:{i2}:{num_possible_keys}")
+            print(f"keystats:{s}")
 print("slice1",count_dict)
