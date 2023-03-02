@@ -1,3 +1,5 @@
+from key import Key
+
 class KeyBuilderException(Exception):
     pass
 
@@ -171,6 +173,9 @@ class KeyBuilder:
             print(f"Running rotation = {running_rotation}")
         print("Successful fit")
         return True
+
+    def key(self):
+        return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]))
 
     def stats(self):
         num_rotations = len(self.rotations)
