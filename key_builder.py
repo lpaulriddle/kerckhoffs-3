@@ -136,6 +136,7 @@ class KeyBuilder:
             try:
                 rot_val = self.rotations[word]['rotation']
             except:
+                # No rotation for this word in the matrix
                 pass
             if word in self.plaintext_char_dict:
                 key_ch = self.plaintext_char_dict[word]
