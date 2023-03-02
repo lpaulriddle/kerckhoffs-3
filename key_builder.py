@@ -132,10 +132,11 @@ class KeyBuilder:
         self.plaintext_char_dict = {}
         used_key_char_dict = {}
         for (word, ch) in known_plaintext_slice:
-            if word not in self.rotations:
-                print(f"word {word} not in key - finishing")
-                return True
-            rot_val = self.rotations[word]['rotation']
+            rot_val = None
+            try:
+                rot_val = self.rotations[word]['rotation']
+            except:
+                pass
             if word in self.plaintext_char_dict:
                 key_ch = self.plaintext_char_dict[word]
                 expected_pt_ch = chr((ord(key_ch) - running_rotation - ord('a')) % 26 + ord('a'))
@@ -167,8 +168,12 @@ class KeyBuilder:
                     return False
                 used_key_char_dict[key_ch] = word
                 self.plaintext_char_dict[word] = key_ch
-                print(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation}")
+                print(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
 
+            if rot_val == None:
+                # unknown rotation - can't continue
+                print(f"Rotation for {word} not known - finishing")
+                return True
             running_rotation = (running_rotation - rot_val) % 26
             print(f"Running rotation = {running_rotation}")
         print("Successful fit")
