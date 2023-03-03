@@ -1,4 +1,5 @@
 from key import Key
+import string
 
 class KeyBuilderException(Exception):
     pass
@@ -130,7 +131,8 @@ class KeyBuilder:
     def fit_plaintext(self, known_plaintext_slice):
         running_rotation = 0
         self.plaintext_char_dict = {}
-        used_key_char_dict = {}
+        self.used_key_char_dict = {}
+        self.unused_key_chars = set(string.ascii_lowercase)
         for (word, ch) in known_plaintext_slice:
             rot_val = None
             try:
@@ -164,10 +166,11 @@ class KeyBuilder:
                 # 456,976 possible keys (26^4), of which only 10,296 had no dups. I wonder if it
                 # would be possible to determine this mathematically somehow instead of iteratively.
                 #
-                if key_ch in used_key_char_dict:
-                    print(f"Duplicate key_char: '{key_ch}' already mapped to word '{used_key_char_dict[key_ch]}'")
+                if key_ch in self.used_key_char_dict:
+                    print(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
                     return False
-                used_key_char_dict[key_ch] = word
+                self.used_key_char_dict[key_ch] = word
+                self.unused_key_chars.remove(key_ch)
                 self.plaintext_char_dict[word] = key_ch
                 print(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
 
@@ -181,7 +184,9 @@ class KeyBuilder:
         return True
 
     def key(self):
-        return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]))
+        unused_key_chars = list(self.unused_key_chars)
+        unused_key_chars.sort()
+        return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
 
     def stats(self):
         num_rotations = len(self.rotations)
