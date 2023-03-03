@@ -100,6 +100,9 @@ class KeyBuilder:
         return True
 
     def next(self):
+        self.plaintext_char_dict = {}
+        self.used_key_char_dict = {}
+        self.unused_key_chars = set(string.ascii_lowercase)
         pos = len(self.unique_words) - 1
         while (pos >= 0):
             word = self.unique_words[pos]
@@ -129,11 +132,11 @@ class KeyBuilder:
             return False
 
     def fit_plaintext(self, known_plaintext_slice):
-        running_rotation = 0
-        self.plaintext_char_dict = {}
-        self.used_key_char_dict = {}
-        self.unused_key_chars = set(string.ascii_lowercase)
-        for (word, ch) in known_plaintext_slice:
+        running_rotation = None
+        if bool(self.plaintext_char_dict) == False:
+            # If this is our first time fitting plaintext with this key, start rotation at 0
+            running_rotation = 0
+        for (i, (word, ch)) in enumerate(known_plaintext_slice):
             rot_val = None
             try:
                 rot_val = self.rotations[word]['rotation']
@@ -142,6 +145,10 @@ class KeyBuilder:
                 pass
             if word in self.plaintext_char_dict:
                 key_ch = self.plaintext_char_dict[word]
+                if running_rotation == None:
+                    print(f"TBD- compute running_rotation for word {word} slice_index {i} cipher index {i+known_plaintext_slice.cipher_index}")
+                    # Need to store previous index of the character - any index should theoretically do
+                    exit(0)
                 expected_pt_ch = chr((ord(key_ch) - running_rotation - ord('a')) % 26 + ord('a'))
                 print(f"Found {word} keychar {key_ch} pt char {ch} (expected {expected_pt_ch})")
 
@@ -234,3 +241,5 @@ class KeyBuilder:
             print("TBD- initial generation failed")
             exit(0)
         self.plaintext_char_dict = {}
+        self.used_key_char_dict = {}
+        self.unused_key_chars = set(string.ascii_lowercase)
