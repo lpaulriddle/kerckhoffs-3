@@ -26,9 +26,17 @@ if matrix_rotations != None:
     print("Stats:",key_builder.stats())
 
     while True:
-        if (key_builder.fit_plaintext(slice2) == True) and (key_builder.fit_plaintext(slice1) == True):
-            key = key_builder.key()
-            print("decryption:",key.decrypt(cipher.word_list))
+        good_key = False
+        if (key_builder.fit_plaintext(slice1) == True):
+            #key1 = key_builder.key()
+            if (key_builder.fit_plaintext(slice2) == True):
+                key = key_builder.key()
+                # Note - this naively passes the entire cipher to decrypt() - needs adjusting to work with slices
+                # that don't start at the beginning of the cipher.
+                #print("decryption:",key.decrypt(cipher.word_list),"key1rot",key1.plaintext_char_dict,"key2rot",key2.plaintext_char_dict,"numrots",len(set(list(key1.rotation_dict.keys())+list(key2.rotation_dict.keys()))))
+                print("decryption:",key.decrypt(cipher.word_list))
+                good_key = True
+        if good_key == True:
             good_count += 1
         else:
             bad_count += 1
