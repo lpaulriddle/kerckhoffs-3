@@ -1,7 +1,7 @@
 import string
 
 class Key:
-    def decrypt(self, cipher_words):
+    def decrypt(self, cipher):
         running_rotation = 0
         plaintext = ""
 
@@ -17,7 +17,7 @@ class Key:
         #   - I think this means we need a "look ahead" algorithm of some sort...
         # - Set of possible letters is limited to what key_builder didn't pre-calculate for us
         #
-        for word in cipher_words:
+        for word in cipher.word_list:
             try:
                 plaintext_char = self.plaintext_char_dict[word]
             except:
