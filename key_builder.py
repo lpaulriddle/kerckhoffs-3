@@ -163,7 +163,7 @@ class KeyBuilder:
                 # slice and the key satisfies the matrix
                 #
                 if ch != expected_pt_ch:
-                    print("Key mismatch: plaintext char '{ch}' != expected char '{expected_pt_ch}'")
+                    print(f"Key mismatch: plaintext char '{ch}' != expected char '{expected_pt_ch}'")
                     return False
             else:
                 key_ch = chr((ord(ch) + running_rotation - ord('a')) % 26 + ord('a'))
