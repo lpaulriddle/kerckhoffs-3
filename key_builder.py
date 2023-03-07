@@ -146,9 +146,12 @@ class KeyBuilder:
             if word in self.plaintext_char_dict:
                 key_ch = self.plaintext_char_dict[word]
                 if running_rotation == None:
-                    print(f"TBD- compute running_rotation for word {word} slice_index {i} cipher index {i+known_plaintext_slice.cipher_index}")
-                    # Need to store previous index of the character - any index should theoretically do
-                    exit(0)
+                    # Is this as easy as calculating the difference between the plaintext char and the key char?
+                    running_rotation = (ord(key_ch) - ord(ch)) % 26
+                    print(f"running_rotation set to {running_rotation}")
+                    #print("TBD- compute running_rotation for word {word} slice_index {i} cipher index {i+known_plaintext_slice.cipher_index}")
+                    # Need index and plaintext value of (at least one) other location of this word
+                    #exit(0)
                 expected_pt_ch = chr((ord(key_ch) - running_rotation - ord('a')) % 26 + ord('a'))
                 print(f"Found {word} keychar {key_ch} pt char {ch} (expected {expected_pt_ch})")
 
