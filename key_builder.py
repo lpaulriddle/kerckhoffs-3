@@ -100,9 +100,7 @@ class KeyBuilder:
         return True
 
     def next(self):
-        self.plaintext_char_dict = {}
-        self.used_key_char_dict = {}
-        self.unused_key_chars = set(string.ascii_lowercase)
+        self.reset()
         pos = len(self.unique_words) - 1
         while (pos >= 0):
             word = self.unique_words[pos]
@@ -130,6 +128,11 @@ class KeyBuilder:
             # exhausted all possible guessed values)
             print("Exhausted all possible rotation combinations")
             return False
+
+    def reset(self):
+        self.plaintext_char_dict = {}
+        self.used_key_char_dict = {}
+        self.unused_key_chars = set(string.ascii_lowercase)
 
     def fit_plaintext(self, known_plaintext_slice):
         running_rotation = None
@@ -243,6 +246,4 @@ class KeyBuilder:
         if not self.generate():
             print("TBD- initial generation failed")
             exit(0)
-        self.plaintext_char_dict = {}
-        self.used_key_char_dict = {}
-        self.unused_key_chars = set(string.ascii_lowercase)
+        self.reset()
