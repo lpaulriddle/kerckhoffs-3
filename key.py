@@ -31,7 +31,7 @@ class Key:
             except:
                 rotation = 0
                 self.rotation_dict[word] = rotation
-            running_rotation -= rotation
+            running_rotation = (running_rotation - rotation) % 26
         return plaintext
 
     def __init__(self, plaintext_char_dict, rotation_dict, unused_key_chars):
