@@ -1,6 +1,11 @@
 import string
 
+from enum import Enum
+
 class Key:
+    class DecryptionException(Exception):
+        pass
+
     def decrypt(self, cipher):
         running_rotation = 0
         plaintext = ""
@@ -18,20 +23,22 @@ class Key:
         # - Set of possible letters is limited to what key_builder didn't pre-calculate for us
         #
         for word in cipher.word_list:
-            try:
-                plaintext_char = self.plaintext_char_dict[word]
-            except:
-                plaintext_char = self.unused_key_chars.pop()
-                self.plaintext_char_dict[word] = plaintext_char
-                
+            plaintext_char = self.plaintext_char_dict.get(word)
+            rotation = self.rotation_dict.get(word)
+
+            if plaintext_char == None:
+                print(f"Missing plaintext character for {word}")
+                return plaintext
             plaintext_char = chr((ord(plaintext_char) - ord('a') - running_rotation) % 26 + ord('a'))
             plaintext += plaintext_char
-            try:
-                rotation = self.rotation_dict[word]
-            except:
-                rotation = 0
-                self.rotation_dict[word] = rotation
-            running_rotation = (running_rotation - rotation) % 26
+            if rotation == None:
+                # Unknown rotation: need to look ahead to find next word without a mapped plaintext char
+                # character
+                print(f"Missing rotation for {word}")
+                return plaintext
+            else:
+                running_rotation = (running_rotation - rotation) % 26
+
         return plaintext
 
     def __init__(self, plaintext_char_dict, rotation_dict, unused_key_chars):
