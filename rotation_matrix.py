@@ -1,3 +1,5 @@
+import collections
+
 def build_rotation_matrix_new(cipher_list, text_offset_list):
     def find_pivot(mat, start_row_index):
         # Iterate through the columns (except for the RHS, which we don't want to
@@ -213,3 +215,58 @@ def build_rotation_matrix_new(cipher_list, text_offset_list):
 def build_rotation_matrix(cipher_list, text, offset):
     text_offset_list = [(text, offset)]
     return build_rotation_matrix_new(cipher_list, text_offset_list)
+
+class RotationMatrix:
+    def __init__(self, cipher, *slices):
+        self.known_plaintext_slices = sorted(slices)
+        self.unique_words = cipher.unique_words
+        self.matrix = []
+
+        slice_index = None
+        last_occurrence_of = {}
+        for pt_slice in self.known_plaintext_slices:
+            if slice_index == None:
+                slice_index = pt_slice.cipher_index
+            else:
+                # Make sure subsequent slices appear later in the cipher
+                # Since we sorted the slices above, this in theory should always be the case
+                assert(pt_slice.cipher_index > slice_index)
+            for (i, (word, ch)) in enumerate(pt_slice):
+                # Get the word's index in the cipher
+                word_index = i + pt_slice.cipher_index
+                #print("wordindex", word_index)
+
+                #
+                # If we've seen this word before, and have known plaintext at both locations, then
+                # we can calculate the required rotation value between the two locations of the word
+                #
+                if word in last_occurrence_of:
+                    (last_index, last_pt_ch) = last_occurrence_of[word]
+                    assert(word_index > last_index)
+                    required_rot = (ord(ch) - ord(last_pt_ch)) % 26
+                    print(f"Required total rotation between {last_index} and {word_index} = {required_rot}")
+
+                    #
+                    # Count the number of occurrences of each word in the range. These will end up
+                    # being the matrix coefficients
+                    #
+                    word_counts = collections.Counter(cipher[last_index:word_index])
+                    matrix_row = [word_counts[x] if x in word_counts else 0 for x in self.unique_words]
+                    matrix_row.append(required_rot)
+                    self.matrix.append(matrix_row)
+
+                last_occurrence_of[word] = (word_index, ch)
+
+    def __str__(self):
+        output = []
+        # Number the columns. Each column corresponds to a word per self.unique_words
+        output.append('   ' + ' '.join(['{:4}'.format(x) for x in range(len(self.matrix[0]) - 1)]))
+        for (line_no, row) in enumerate(self.matrix):
+            # I originally pulled non-zero entries so the words could be shown at the end of each row.
+            # Probably not necessary to do this any more
+            non_zero_entries = [(w,x) for (w,x) in zip(self.unique_words, row) if x != 0]
+            total = sum([int(w[-1]) * x for (w,x) in non_zero_entries]) % 26
+            output.append('{:2}:'.format(line_no) +
+                          ' '.join(['{:-4.1f}'.format(x) for x in row]) +
+                          '({:4.1f}) {:4.1f}'.format(row[-1] % 26, total))
+        return "\n".join(output)
