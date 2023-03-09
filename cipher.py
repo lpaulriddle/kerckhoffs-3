@@ -136,3 +136,6 @@ class Cipher:
 
     def __len__(self):
         return len(self.word_list)
+
+    def __getitem__(self, i):
+        return self.word_list[i]
