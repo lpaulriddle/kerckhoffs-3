@@ -8,6 +8,9 @@ class Cipher:
         def __iter__(self):
             return zip(self.cipher_slice, self.plaintext)
 
+        def __lt__(self, other):
+            return self.cipher_index < other.cipher_index
+
     def known_plaintext_slice(self, plaintext, cipher_index):
         return self.KnownPlaintextSlice(self, plaintext, cipher_index)
 
