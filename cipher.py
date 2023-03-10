@@ -11,6 +11,9 @@ class Cipher:
         def __lt__(self, other):
             return self.cipher_index < other.cipher_index
 
+        def __repr__(self):
+            return f"{self.cipher_index}:'{self.plaintext}'"
+
     def known_plaintext_slice(self, plaintext, cipher_index):
         return self.KnownPlaintextSlice(self, plaintext, cipher_index)
 
