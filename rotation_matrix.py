@@ -90,8 +90,8 @@ def gauss_jordan_reduce(mat, words):
                     good_matrix = False
                     
         #print("Subsequent rows: %s" % mat[row_index+1:])
-        #print("After %d iteration(s), matrix now:" % (row_index+1))
-        #print_matrix(mat, words)
+        print("After %d iteration(s), matrix now:" % (row_index+1))
+        print_matrix(mat, words)
 
     # Can't have a non-integer rotation value
     if (good_matrix == True) and any(not(row[-1].is_integer()) for row in mat):
@@ -128,19 +128,21 @@ def get_computed_codeword_rotations(matrix, words):
     print(f"{len(rotations)} rotations: {rotations}")
     return(rotations)
 
-def build_rotation_matrix_new(cipher_list, text_offset_list):
-    def print_matrix(mat, unique_words):
-        line_no = 0
-        for i in mat:
-            zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
-            words = [w for (w,x) in zthing]
-            total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
-            print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total), words)
-            # This won't work with #3, because it assumes the last digit of the code word == the rotation
-            #if total != (i[-1] % 26):
-            #    print("aah.. no..")
-            line_no += 1
+def print_matrix(mat, unique_words):
+    line_no = 0
+    print('    ' + ' '.join(['{:4}'.format(x) for x in range(len(mat[0]) - 1)]))
+    for i in mat:
+        zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
+        #words = [w for (w,x) in zthing]
+        total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
+        #print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total), words)
+        print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total))
+        # This won't work with #3, because it assumes the last digit of the code word == the rotation
+        #if total != (i[-1] % 26):
+        #    print("aah.. no..")
+        line_no += 1
 
+def build_rotation_matrix_new(cipher_list, text_offset_list):
     def build_initial_matrix(text, cipher_slice, unique_words):
         assert(len(cipher_slice) == len(text))
         last_occurrence_of = {}
@@ -251,7 +253,7 @@ class RotationMatrix:
 
                     #
                     # Count the number of occurrences of each word in the range. These will end up
-                    # being the matrix coefficients
+                    # being the row coefficients
                     #
                     word_counts = collections.Counter(cipher[last_index:word_index])
                     matrix_row = [word_counts[x] if x in word_counts else 0 for x in self.unique_words]
