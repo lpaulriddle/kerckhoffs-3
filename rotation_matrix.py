@@ -100,36 +100,35 @@ def gauss_jordan_reduce(mat, words):
     #print_matrix(mat,words)
     return(good_matrix)
 
+def get_computed_codeword_rotations(matrix, words):
+    rotations = {}
+    for row in matrix:
+        # Can't have a fractional rotation value
+        assert(row[-1].is_integer())
+
+        # At this point, the reduction is complete, and we need to take the RHS % 26 to get
+        # the actual rotation value for the word.
+        row[-1] %= 26
+        l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
+        if len(l) > 0:
+            # First non-zero coefficient should always be 1 for a matrix in reduced row
+            # echelon form. Anything else means we have a bug.
+            assert(l[0][0] == 1.0)
+            print("non-zero multipliers:", l, "=>", row[-1])
+        for (mult, word) in l:
+            #
+            # Build a list of row equations for this code word for later evaluation.
+            #
+            eq = (l, int(row[-1]))
+            if word in rotations:
+                rotations[word].append(eq)
+            else:
+                rotations[word] = [eq]
+
+    print(f"{len(rotations)} rotations: {rotations}")
+    return(rotations)
+
 def build_rotation_matrix_new(cipher_list, text_offset_list):
-
-    def get_computed_codeword_rotations(matrix, words):
-        rotations = {}
-        for row in matrix:
-            # Can't have a fractional rotation value
-            assert(row[-1].is_integer())
-
-            # At this point, the reduction is complete, and we need to take the RHS % 26 to get
-            # the actual rotation value for the word.
-            row[-1] %= 26
-            l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
-            if len(l) > 0:
-                # First non-zero coefficient should always be 1 for a matrix in reduced row
-                # echelon form. Anything else means we have a bug.
-                assert(l[0][0] == 1.0)
-                print("non-zero multipliers:", l, "=>", row[-1])
-            for (mult, word) in l:
-                #
-                # Build a list of row equations for this code word for later evaluation.
-                #
-                eq = (l, int(row[-1]))
-                if word in rotations:
-                    rotations[word].append(eq)
-                else:
-                    rotations[word] = [eq]
-
-        print(f"{len(rotations)} rotations: {rotations}")
-        return(rotations)
-
     def print_matrix(mat, unique_words):
         line_no = 0
         for i in mat:
@@ -217,6 +216,9 @@ def build_rotation_matrix(cipher_list, text, offset):
     text_offset_list = [(text, offset)]
     return build_rotation_matrix_new(cipher_list, text_offset_list)
 
+class RotationMatrixException(Exception):
+    pass
+
 class RotationMatrix:
     def __init__(self, cipher, *slices):
         self.known_plaintext_slices = sorted(slices)
@@ -273,4 +275,8 @@ class RotationMatrix:
         return "\n".join(output)
 
     def reduce(self):
-        gauss_jordan_reduce(self.matrix, "bonechip")
+        if gauss_jordan_reduce(self.matrix, "bonechip") == False:
+            raise RotationMatrixException(f"Bad row reduction for {self.known_plaintext_slices}")
+
+    def get_rotations(self):
+        return get_computed_codeword_rotations(self.matrix, self.unique_words)
