@@ -27,7 +27,11 @@ def find_pivot(mat, start_row_index):
     print("No pivot found")
     return (None, None)
 
-def gauss_jordan_reduce(mat, words):
+def swap_columns(mat, col_index1, col_index2):
+    for row in mat:
+        row[col_index1], row[col_index2] = row[col_index2], row[col_index1]
+
+def gauss_jordan_reduce(mat, unique_words):
     good_matrix = True
     for row_index in range(len(mat)):
         (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
@@ -35,7 +39,7 @@ def gauss_jordan_reduce(mat, words):
             break
         assert(pivot_row_index >= row_index)
         if pivot_row_index > row_index:
-            print("swap rows %d and %d" % (row_index, pivot_row_index))
+            print(f"swap rows {row_index} and {pivot_row_index}")
             temp = mat[row_index]
             mat[row_index] = mat[pivot_row_index]
             mat[pivot_row_index] = temp
@@ -53,7 +57,7 @@ def gauss_jordan_reduce(mat, words):
         # Transform other rows so that everything else in the pivot column is zero
         #
         pivot_row = mat[row_index]
-        print("Pivot row: %s; first nonzero index: %d" % (pivot_row, pivot_col_index))
+        print(f"Pivot row: {pivot_row}; first nonzero index: {pivot_col_index}")
         for secondary_row_index in range(0, len(mat)):
             if secondary_row_index == row_index:
                 continue
@@ -90,14 +94,14 @@ def gauss_jordan_reduce(mat, words):
                     good_matrix = False
                     
         #print("Subsequent rows: %s" % mat[row_index+1:])
-        print("After %d iteration(s), matrix now:" % (row_index+1))
-        print_matrix(mat, words)
+        print(f"After {row_index+1} iteration(s), matrix now:")
+        print_matrix(mat, unique_words)
 
     # Can't have a non-integer rotation value
     if (good_matrix == True) and any(not(row[-1].is_integer()) for row in mat):
         good_matrix = False
-    print("Reduced matrix:")
-    #print_matrix(mat,words)
+    #print("Reduced matrix:")
+    #print_matrix(mat, unique_words)
     return(good_matrix)
 
 def get_computed_codeword_rotations(matrix, words):
@@ -277,7 +281,7 @@ class RotationMatrix:
         return "\n".join(output)
 
     def reduce(self):
-        if gauss_jordan_reduce(self.matrix, "bonechip") == False:
+        if gauss_jordan_reduce(self.matrix, self.unique_words) == False:
             raise RotationMatrixException(f"Bad row reduction for {self.known_plaintext_slices}")
 
     def get_rotations(self):
