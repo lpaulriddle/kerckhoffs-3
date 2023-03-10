@@ -13,21 +13,26 @@ def find_pivot(mat, start_row_index):
             # smallest non-zero pivot value we can find (preferably a 1). This is to
             # try to avoid dividing by large numbers.
             #
-            val = mat[row_num][col_num]
-            if abs(val) == 1:
+            potential_pivot_val = mat[row_num][col_num]
+            if abs(potential_pivot_val) == 1:
                 min_pivot_row = row_num
                 break
-            if (val != 0) and (abs(val) < abs(min_pivot_val)):
-                min_pivot_val = mat[row_num][col_num]
+            if (potential_pivot_val != 0) and (abs(potential_pivot_val) < abs(min_pivot_val)):
+                min_pivot_val = potential_pivot_val
                 min_pivot_row = row_num
-                print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
+                #print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
         if min_pivot_row >= 0:
-            print(f"Using pivot {min_pivot_row}, {col_num} (value {mat[min_pivot_row][col_num]})")
+            pivot_val = mat[min_pivot_row][col_num]
+            rhs = mat[min_pivot_row][-1]
+            print(f"Using pivot {min_pivot_row}, {col_num} (value {pivot_val}, rhs {rhs})")
+            if rhs % pivot_val != 0:
+                raise RotationMatrixException(f"pivot {pivot_val} does not evenly divide RHS {rhs} on line {min_pivot_row}")
             return(min_pivot_row, col_num)
     print("No pivot found")
     return (None, None)
 
-def swap_columns(mat, col_index1, col_index2):
+def swap_columns(mat, unique_words, col_index1, col_index2):
+    unique_words[col_index1], unique_words[col_index2] = unique_words[col_index2], unique_words[col_index1]
     for row in mat:
         row[col_index1], row[col_index2] = row[col_index2], row[col_index1]
 
