@@ -1,105 +1,106 @@
 import collections
 
-def build_rotation_matrix_new(cipher_list, text_offset_list):
-    def find_pivot(mat, start_row_index):
-        # Iterate through the columns (except for the RHS, which we don't want to
-        # ever use as a pivot)
-        for col_num in range(len(mat[0]) - 1):
-            min_pivot_val = 1000
-            min_pivot_row = -1
-            for row_num in range(start_row_index, len(mat)):
+def find_pivot(mat, start_row_index):
+    # Iterate through the columns (except for the RHS, which we don't want to
+    # ever use as a pivot)
+    for col_num in range(len(mat[0]) - 1):
+        min_pivot_val = 1000
+        min_pivot_row = -1
+        for row_num in range(start_row_index, len(mat)):
 
-                #
-                # Rather than blindly selecting the first non-zero pivot value, look for the
-                # smallest non-zero pivot value we can find (preferably a 1). This is to
-                # try to avoid dividing by large numbers.
-                #
-                val = mat[row_num][col_num]
-                if abs(val) == 1:
-                    min_pivot_row = row_num
-                    break
-                if (val != 0) and (abs(val) < abs(min_pivot_val)):
-                    min_pivot_val = mat[row_num][col_num]
-                    min_pivot_row = row_num
-                    print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
-            if min_pivot_row >= 0:
-                print(f"Using pivot {min_pivot_row}, {col_num} (value {mat[min_pivot_row][col_num]})")
-                return(min_pivot_row, col_num)
-        print("No pivot found")
-        return (None, None)
-
-    def gauss_jordan_reduce(mat, words):
-        good_matrix = True
-        for row_index in range(len(mat)):
-            (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
-            if pivot_row_index == None:
+            #
+            # Rather than blindly selecting the first non-zero pivot value, look for the
+            # smallest non-zero pivot value we can find (preferably a 1). This is to
+            # try to avoid dividing by large numbers.
+            #
+            val = mat[row_num][col_num]
+            if abs(val) == 1:
+                min_pivot_row = row_num
                 break
-            assert(pivot_row_index >= row_index)
-            if pivot_row_index > row_index:
-                print("swap rows %d and %d" % (row_index, pivot_row_index))
-                temp = mat[row_index]
-                mat[row_index] = mat[pivot_row_index]
-                mat[pivot_row_index] = temp
-                #print("matrix now", mat)
+            if (val != 0) and (abs(val) < abs(min_pivot_val)):
+                min_pivot_val = mat[row_num][col_num]
+                min_pivot_row = row_num
+                print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
+        if min_pivot_row >= 0:
+            print(f"Using pivot {min_pivot_row}, {col_num} (value {mat[min_pivot_row][col_num]})")
+            return(min_pivot_row, col_num)
+    print("No pivot found")
+    return (None, None)
 
-            pivot_val = mat[row_index][pivot_col_index]
+def gauss_jordan_reduce(mat, words):
+    good_matrix = True
+    for row_index in range(len(mat)):
+        (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
+        if pivot_row_index == None:
+            break
+        assert(pivot_row_index >= row_index)
+        if pivot_row_index > row_index:
+            print("swap rows %d and %d" % (row_index, pivot_row_index))
+            temp = mat[row_index]
+            mat[row_index] = mat[pivot_row_index]
+            mat[pivot_row_index] = temp
+            #print("matrix now", mat)
+
+        pivot_val = mat[row_index][pivot_col_index]
+
+        #
+        # Transform row to make pivot equal 1
+        # This also converts everything to floating point
+        #
+        mat[row_index] = [i / pivot_val for i in mat[row_index]]
+
+        #
+        # Transform other rows so that everything else in the pivot column is zero
+        #
+        pivot_row = mat[row_index]
+        print("Pivot row: %s; first nonzero index: %d" % (pivot_row, pivot_col_index))
+        for secondary_row_index in range(0, len(mat)):
+            if secondary_row_index == row_index:
+                continue
+            secondary_row = mat[secondary_row_index]
 
             #
-            # Transform row to make pivot equal 1
-            # This also converts everything to floating point
+            # Most of the numbers in the matrix represent code word frequencies, not
+            # rotation values, so should not be taken modulo 26. The exception is the
+            # final row in the matrix, which is the RHS of that row's equation.
+            # NOTE!! Can't take RHS % 26 until after the row reduction is completely
+            # finished. This is because we have to keep track of whether it is positive or
+            # negative (e.g. does 24 represent +24 or -2), or "bad things will happen(tm)"
+            # when we try to divide the RHS by anything.
             #
-            mat[row_index] = [i / pivot_val for i in mat[row_index]]
-
-            #
-            # Transform other rows so that everything else in the pivot column is zero
-            #
-            pivot_row = mat[row_index]
-            print("Pivot row: %s; first nonzero index: %d" % (pivot_row, pivot_col_index))
-            for secondary_row_index in range(0, len(mat)):
-                if secondary_row_index == row_index:
-                    continue
-                secondary_row = mat[secondary_row_index]
+            if secondary_row[pivot_col_index] != 0:
+                row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
+                #print(f"row_mult for row {secondary_row_index:2} = {row_mult}")
+                new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
+                #print(f"modified row {secondary_row_index:2}     = {new_row}")
+                #print("new_row %s" % new_row)
+                mat[secondary_row_index] = new_row
 
                 #
-                # Most of the numbers in the matrix represent code word frequencies, not
-                # rotation values, so should not be taken modulo 26. The exception is the
-                # final row in the matrix, which is the RHS of that row's equation.
-                # NOTE!! Can't take RHS % 26 until after the row reduction is completely
-                # finished. This is because we have to keep track of whether it is positive or
-                # negative (e.g. does 24 represent +24 or -2), or "bad things will happen(tm)"
-                # when we try to divide the RHS by anything.
+                # Look for a row of all zeroes except the RHS
+                # Not sure if doing this now will work, or if it needs to be done after the
+                # reduction completes. I guess I'll find out
                 #
-                if secondary_row[pivot_col_index] != 0:
-                    row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
-                    #print(f"row_mult for row {secondary_row_index:2} = {row_mult}")
-                    new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
-                    #print(f"modified row {secondary_row_index:2}     = {new_row}")
-                    #print("new_row %s" % new_row)
-                    mat[secondary_row_index] = new_row
+                # Another fun "gotcha" here: with a typical matrix, a row of all zeros except
+                # the RHS means the matrix is indeterminant (no solution). However, in this
+                # case, since we're dealing with rotations, any RHS that equals 0 (mod 26) is
+                # acceptable.
+                #
+                if all(v == 0 for v in new_row[:-1]) and (new_row[-1] % 26 != 0):
+                    good_matrix = False
+                    
+        #print("Subsequent rows: %s" % mat[row_index+1:])
+        #print("After %d iteration(s), matrix now:" % (row_index+1))
+        #print_matrix(mat, words)
 
-                    #
-                    # Look for a row of all zeroes except the RHS
-                    # Not sure if doing this now will work, or if it needs to be done after the
-                    # reduction completes. I guess I'll find out
-                    #
-                    # Another fun "gotcha" here: with a typical matrix, a row of all zeros except
-                    # the RHS means the matrix is indeterminant (no solution). However, in this
-                    # case, since we're dealing with rotations, any RHS that equals 0 (mod 26) is
-                    # acceptable.
-                    #
-                    if all(v == 0 for v in new_row[:-1]) and (new_row[-1] % 26 != 0):
-                        good_matrix = False
+    # Can't have a non-integer rotation value
+    if (good_matrix == True) and any(not(row[-1].is_integer()) for row in mat):
+        good_matrix = False
+    print("Reduced matrix:")
+    #print_matrix(mat,words)
+    return(good_matrix)
 
-            #print("Subsequent rows: %s" % mat[row_index+1:])
-            #print("After %d iteration(s), matrix now:" % (row_index+1))
-            #print_matrix(mat, words)
-
-        # Can't have a non-integer rotation value
-        if (good_matrix == True) and any(not(row[-1].is_integer()) for row in matrix):
-            good_matrix = False
-        print("Reduced matrix:")
-        print_matrix(mat,words)
-        return(good_matrix)
+def build_rotation_matrix_new(cipher_list, text_offset_list):
 
     def get_computed_codeword_rotations(matrix, words):
         rotations = {}
@@ -270,3 +271,6 @@ class RotationMatrix:
                           ' '.join(['{:-4.1f}'.format(x) for x in row]) +
                           '({:4.1f}) {:4.1f}'.format(row[-1] % 26, total))
         return "\n".join(output)
+
+    def reduce(self):
+        gauss_jordan_reduce(self.matrix, "bonechip")
