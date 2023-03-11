@@ -17,7 +17,9 @@ def find_pivot(mat, start_row_index):
             if abs(potential_pivot_val) == 1:
                 min_pivot_row = row_num
                 break
-            if (potential_pivot_val != 0) and (abs(potential_pivot_val) < abs(min_pivot_val)):
+            if ((potential_pivot_val != 0) and
+                (abs(potential_pivot_val) < abs(min_pivot_val)) and
+                (mat[row_num][-1] % potential_pivot_val == 0)):
                 min_pivot_val = potential_pivot_val
                 min_pivot_row = row_num
                 #print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
