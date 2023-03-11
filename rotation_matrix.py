@@ -1,58 +1,53 @@
 import collections
 
-def find_pivot(mat, start_row_index):
-    # Iterate through the columns (except for the RHS, which we don't want to
-    # ever use as a pivot)
-    for col_num in range(len(mat[0]) - 1):
-        min_pivot_val = 1000
-        min_pivot_row = -1
-        for row_num in range(start_row_index, len(mat)):
-
-            #
-            # Rather than blindly selecting the first non-zero pivot value, look for the
-            # smallest non-zero pivot value we can find (preferably a 1). This is to
-            # try to avoid dividing by large numbers.
-            #
-            potential_pivot_val = mat[row_num][col_num]
-            if abs(potential_pivot_val) == 1:
-                min_pivot_row = row_num
-                break
-            if ((potential_pivot_val != 0) and
-                (abs(potential_pivot_val) < abs(min_pivot_val)) and
-                (mat[row_num][-1] % potential_pivot_val == 0)):
-                min_pivot_val = potential_pivot_val
-                min_pivot_row = row_num
-                #print("Found potential pivot (%d,%d) value %f" % (row_num, col_num, mat[row_num][col_num]))
-        if min_pivot_row >= 0:
-            pivot_val = mat[min_pivot_row][col_num]
-            rhs = mat[min_pivot_row][-1]
-            print(f"Using pivot {min_pivot_row}, {col_num} (value {pivot_val}, rhs {rhs})")
-            if rhs % pivot_val != 0:
-                raise RotationMatrixException(f"pivot {pivot_val} does not evenly divide RHS {rhs} on line {min_pivot_row}")
-            return(min_pivot_row, col_num)
-    print("No pivot found")
-    return (None, None)
-
 def swap_columns(mat, unique_words, col_index1, col_index2):
     unique_words[col_index1], unique_words[col_index2] = unique_words[col_index2], unique_words[col_index1]
     for row in mat:
         row[col_index1], row[col_index2] = row[col_index2], row[col_index1]
 
+def find_pivot(mat, unique_words, starting_row_num):
+    # Keep track of the first column we find that is not all zeroes below the starting row
+    first_nonzero_col_num = -1
+
+    # Iterate through the columns (except for the RHS, which we don't want to
+    # ever use as a pivot)
+    for col_num in range(len(mat[0]) - 1):
+        pivot_row_num = -1
+        for row_num in range(starting_row_num, len(mat)):
+
+            #
+            # Look for a 1 in the current column
+            #
+            potential_pivot_val = mat[row_num][col_num]
+            appv = abs(potential_pivot_val)
+            if (appv > 0) and (first_nonzero_col_num < 0):
+                first_nonzero_col_num = col_num
+            if appv == 1:
+                # Found a 1 to use as the pivot
+                pivot_row_num = row_num
+                break
+
+        if pivot_row_num >= 0:
+            if pivot_row_num > starting_row_num:
+                print(f"Swapping rows {starting_row_num} and {pivot_row_num}")
+                mat[starting_row_num], mat[pivot_row_num] = mat[pivot_row_num], mat[starting_row_num]
+            if col_num > first_nonzero_col_num:
+                print(f"Swapping columns {first_nonzero_col_num} and {col_num}")
+                swap_columns(mat, unique_words, first_nonzero_col_num, col_num)
+            return(starting_row_num, first_nonzero_col_num)
+
+    print("No pivot found")
+    return (None, None)
+
 def gauss_jordan_reduce(mat, unique_words):
     good_matrix = True
     for row_index in range(len(mat)):
-        (pivot_row_index, pivot_col_index) = find_pivot(mat, row_index)
+        (pivot_row_index, pivot_col_index) = find_pivot(mat, unique_words, row_index)
         if pivot_row_index == None:
             break
-        assert(pivot_row_index >= row_index)
-        if pivot_row_index > row_index:
-            print(f"swap rows {row_index} and {pivot_row_index}")
-            temp = mat[row_index]
-            mat[row_index] = mat[pivot_row_index]
-            mat[pivot_row_index] = temp
-            #print("matrix now", mat)
 
         pivot_val = mat[row_index][pivot_col_index]
+        assert(abs(pivot_val) == 1)
 
         #
         # Transform row to make pivot equal 1
