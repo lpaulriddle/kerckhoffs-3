@@ -1,59 +1,72 @@
 import collections
 
-def swap_columns(mat, unique_words, col_index1, col_index2):
+def _swap_columns(mat, unique_words, col_index1, col_index2):
     unique_words[col_index1], unique_words[col_index2] = unique_words[col_index2], unique_words[col_index1]
     for row in mat:
         row[col_index1], row[col_index2] = row[col_index2], row[col_index1]
 
-def find_pivot(mat, unique_words, starting_row_num):
-    # Keep track of the first column we find that is not all zeroes below the starting row
-    first_nonzero_col_num = -1
+def _find_pivot(mat, unique_words, starting_row_num):
 
+    #
     # Iterate through the columns (except for the RHS, which we don't want to
     # ever use as a pivot)
+    #
     for col_num in range(len(mat[0]) - 1):
         pivot_row_num = -1
+        pivot_val = None
         for row_num in range(starting_row_num, len(mat)):
 
             #
-            # Look for a 1 in the current column
+            # Find the smallest entry in the column with an absolute value greater than zero
             #
             potential_pivot_val = mat[row_num][col_num]
             appv = abs(potential_pivot_val)
-            if (appv > 0) and (first_nonzero_col_num < 0):
-                first_nonzero_col_num = col_num
-            if appv == 1:
-                # Found a 1 to use as the pivot
+            if (appv != 0) and ((pivot_val == None) or (appv < abs(pivot_val))):
+                pivot_val = potential_pivot_val
                 pivot_row_num = row_num
-                break
+                if appv == 1:
+                    # If we find a 1, we can short circuit
+                    break
 
         if pivot_row_num >= 0:
+            # Swap rows if needed
             if pivot_row_num > starting_row_num:
                 print(f"Swapping rows {starting_row_num} and {pivot_row_num}")
                 mat[starting_row_num], mat[pivot_row_num] = mat[pivot_row_num], mat[starting_row_num]
-            if col_num > first_nonzero_col_num:
-                print(f"Swapping columns {first_nonzero_col_num} and {col_num}")
-                swap_columns(mat, unique_words, first_nonzero_col_num, col_num)
-            return(starting_row_num, first_nonzero_col_num)
+            return col_num
 
+        #
+        # If we fall through to here, it means that there were no non-zero entries in
+        # the column at or below the starting row, so we should move on and check the
+        # next column
+        #
+
+    #
+    # If we get here, then there were no non-zero entries anywhere in the matrix at or below
+    # the starting row (which basically means we're finished)
+    #
     print("No pivot found")
-    return (None, None)
+    return None
 
 def gauss_jordan_reduce(mat, unique_words):
     good_matrix = True
     for row_index in range(len(mat)):
-        (pivot_row_index, pivot_col_index) = find_pivot(mat, unique_words, row_index)
-        if pivot_row_index == None:
+        pivot_col_index = _find_pivot(mat, unique_words, row_index)
+        if pivot_col_index == None:
             break
 
         pivot_val = mat[row_index][pivot_col_index]
-        assert(abs(pivot_val) == 1)
+        assert(pivot_val != 0)
+
+        # For minimum pivot values > 1:
+        # - take GCD of all elements in the row
+        #   if > 1: reduce the row by dividing all elements by the GCD
 
         #
         # Transform row to make pivot equal 1
         # This also converts everything to floating point
         #
-        mat[row_index] = [i / pivot_val for i in mat[row_index]]
+        mat[row_index] = [i // pivot_val for i in mat[row_index]]
 
         #
         # Transform other rows so that everything else in the pivot column is zero
@@ -67,7 +80,7 @@ def gauss_jordan_reduce(mat, unique_words):
 
             #
             # Most of the numbers in the matrix represent code word frequencies, not
-            # rotation values, so should not be taken modulo 26. The exception is the
+            # rotation values, so should not be taken mod 26. The exception is the
             # final row in the matrix, which is the RHS of that row's equation.
             # NOTE!! Can't take RHS % 26 until after the row reduction is completely
             # finished. This is because we have to keep track of whether it is positive or
