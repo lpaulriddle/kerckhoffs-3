@@ -97,7 +97,7 @@ def gauss_jordan_reduce(mat, unique_words):
                 #
                 all_zeroes = True
                 negate = False
-                for i in range(26):
+                for i in range(len(mat[0]) - 1):
                     coeff = new_row[i]
                     if coeff != 0:
                         if all_zeroes == True and coeff < 0:
