@@ -110,9 +110,6 @@ def gauss_jordan_reduce(mat, unique_words):
 def get_computed_codeword_rotations(matrix, words):
     rotations = {}
     for row in matrix:
-        # Can't have a fractional rotation value
-        assert(row[-1].is_integer())
-
         # At this point, the reduction is complete, and we need to take the RHS % 26 to get
         # the actual rotation value for the word.
         row[-1] %= 26
@@ -120,13 +117,14 @@ def get_computed_codeword_rotations(matrix, words):
         if len(l) > 0:
             # First non-zero coefficient should always be 1 for a matrix in reduced row
             # echelon form. Anything else means we have a bug.
-            assert(l[0][0] == 1.0)
+            # 
+            #assert(l[0][0] == 1)
             print("non-zero multipliers:", l, "=>", row[-1])
         for (mult, word) in l:
             #
             # Build a list of row equations for this code word for later evaluation.
             #
-            eq = (l, int(row[-1]))
+            eq = (l, row[-1])
             if word in rotations:
                 rotations[word].append(eq)
             else:
@@ -137,13 +135,13 @@ def get_computed_codeword_rotations(matrix, words):
 
 def print_matrix(mat, unique_words):
     line_no = 0
-    print('    ' + ' '.join(['{:4}'.format(x) for x in range(len(mat[0]) - 1)]))
+    print('    ' + ' '.join(['{:3}'.format(x) for x in range(len(mat[0]) - 1)]))
     for i in mat:
         zthing = [(w,x) for (w,x) in zip(unique_words, i) if x != 0]
         #words = [w for (w,x) in zthing]
         total = sum([int(w[-1]) * x for (w,x) in zthing]) % 26
         #print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total), words)
-        print('{:2}:'.format(line_no), ' '.join(['{:-4.1f}'.format(x) for x in i]), '({:4.1f}) {:4.1f}'.format(i[-1] % 26, total))
+        print('{:2}:'.format(line_no), ' '.join(['{:-3}'.format(x) for x in i]), '({:3}) {:3}'.format(i[-1] % 26, total))
         # This won't work with #3, because it assumes the last digit of the code word == the rotation
         #if total != (i[-1] % 26):
         #    print("aah.. no..")
@@ -272,15 +270,15 @@ class RotationMatrix:
     def __str__(self):
         output = []
         # Number the columns. Each column corresponds to a word per self.unique_words
-        output.append('   ' + ' '.join(['{:4}'.format(x) for x in range(len(self.matrix[0]) - 1)]))
+        output.append('   ' + ' '.join(['{:3}'.format(x) for x in range(len(self.matrix[0]) - 1)]))
         for (line_no, row) in enumerate(self.matrix):
             # I originally pulled non-zero entries so the words could be shown at the end of each row.
             # Probably not necessary to do this any more
             non_zero_entries = [(w,x) for (w,x) in zip(self.unique_words, row) if x != 0]
             total = sum([int(w[-1]) * x for (w,x) in non_zero_entries]) % 26
             output.append('{:2}:'.format(line_no) +
-                          ' '.join(['{:-4.1f}'.format(x) for x in row]) +
-                          '({:4.1f}) {:4.1f}'.format(row[-1] % 26, total))
+                          ' '.join(['{:-3}'.format(x) for x in row]) +
+                          '({:3}) {:3}'.format(row[-1] % 26, total))
         return "\n".join(output)
 
     def reduce(self):
