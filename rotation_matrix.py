@@ -1,4 +1,5 @@
 import collections
+import math
 
 def _swap_columns(mat, unique_words, col_index1, col_index2):
     unique_words[col_index1], unique_words[col_index2] = unique_words[col_index2], unique_words[col_index1]
@@ -49,50 +50,40 @@ def _find_pivot(mat, unique_words, starting_row_num):
     return None
 
 def gauss_jordan_reduce(mat, unique_words):
-    good_matrix = True
-    for row_index in range(len(mat)):
-        pivot_col_index = _find_pivot(mat, unique_words, row_index)
+    for pivot_row_index in range(len(mat)):
+        pivot_col_index = _find_pivot(mat, unique_words, pivot_row_index)
         if pivot_col_index == None:
             break
-
-        pivot_val = mat[row_index][pivot_col_index]
+        pivot_val = mat[pivot_row_index][pivot_col_index]
         assert(pivot_val != 0)
 
-        # For minimum pivot values > 1:
-        # - take GCD of all elements in the row
-        #   if > 1: reduce the row by dividing all elements by the GCD
-
         #
-        # Transform row to make pivot equal 1
-        # This also converts everything to floating point
+        # Reduce/simplify the pivot row if possible
         #
-        mat[row_index] = [i // pivot_val for i in mat[row_index]]
+        if abs(pivot_val) > 1:
+            row_gcd = math.gcd(*mat[pivot_row_index])
+            if row_gcd > 1:
+                mat[pivot_row_index] = [x // row_gcd for x in mat[pivot_row_index]]
+                pivot_val = mat[pivot_row_index][pivot_col_index]
 
         #
         # Transform other rows so that everything else in the pivot column is zero
         #
-        pivot_row = mat[row_index]
-        print(f"Pivot row: {pivot_row}; first nonzero index: {pivot_col_index}")
+        pivot_row = mat[pivot_row_index]
+        #print(f"Pivot row: {pivot_row}; first nonzero index: {pivot_col_index}")
         for secondary_row_index in range(0, len(mat)):
-            if secondary_row_index == row_index:
+            if secondary_row_index == pivot_row_index:
+                # Skip the pivot row
                 continue
             secondary_row = mat[secondary_row_index]
 
-            #
-            # Most of the numbers in the matrix represent code word frequencies, not
-            # rotation values, so should not be taken mod 26. The exception is the
-            # final row in the matrix, which is the RHS of that row's equation.
-            # NOTE!! Can't take RHS % 26 until after the row reduction is completely
-            # finished. This is because we have to keep track of whether it is positive or
-            # negative (e.g. does 24 represent +24 or -2), or "bad things will happen(tm)"
-            # when we try to divide the RHS by anything.
-            #
-            if secondary_row[pivot_col_index] != 0:
-                row_mult = [x * secondary_row[pivot_col_index] for x in pivot_row]
-                #print(f"row_mult for row {secondary_row_index:2} = {row_mult}")
-                new_row = [x-y for (x,y) in zip(secondary_row, row_mult)]
-                #print(f"modified row {secondary_row_index:2}     = {new_row}")
-                #print("new_row %s" % new_row)
+            secondary_pivot_col_val = secondary_row[pivot_col_index]
+            if secondary_pivot_col_val != 0:
+                lcm = math.lcm(pivot_val, secondary_pivot_col_val)
+                secondary_row = [x * (lcm // secondary_pivot_col_val) for x in secondary_row]
+                pivot_row_multiple = [x * (lcm // pivot_val) for x in pivot_row]
+
+                new_row = [(x-y) for (x,y) in zip(secondary_row, pivot_row_multiple)]
                 mat[secondary_row_index] = new_row
 
                 #
@@ -106,18 +97,15 @@ def gauss_jordan_reduce(mat, unique_words):
                 # acceptable.
                 #
                 if all(v == 0 for v in new_row[:-1]) and (new_row[-1] % 26 != 0):
-                    good_matrix = False
+                    return False
                     
         #print("Subsequent rows: %s" % mat[row_index+1:])
-        print(f"After {row_index+1} iteration(s), matrix now:")
+        print(f"After {pivot_row_index+1} iteration(s), matrix now:")
         print_matrix(mat, unique_words)
 
-    # Can't have a non-integer rotation value
-    if (good_matrix == True) and any(not(row[-1].is_integer()) for row in mat):
-        good_matrix = False
     #print("Reduced matrix:")
     #print_matrix(mat, unique_words)
-    return(good_matrix)
+    return True
 
 def get_computed_codeword_rotations(matrix, words):
     rotations = {}
