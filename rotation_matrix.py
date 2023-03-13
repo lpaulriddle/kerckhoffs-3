@@ -87,16 +87,27 @@ def gauss_jordan_reduce(mat, unique_words):
                 mat[secondary_row_index] = new_row
 
                 #
-                # Look for a row of all zeroes except the RHS
-                # Not sure if doing this now will work, or if it needs to be done after the
-                # reduction completes. I guess I'll find out
+                # Look for a bad reduction (a row of all zero coefficients with a non-zero RHS)
+                # and also negate the row if the leading non-zero entry is negative. Not the most
+                # elegant or "Pythonic" code, but gets the job done fairly straightforwardly.
                 #
-                # Another fun "gotcha" here: with a typical matrix, a row of all zeros except
-                # the RHS means the matrix is indeterminant (no solution). However, in this
-                # case, since we're dealing with rotations, any RHS that equals 0 (mod 26) is
-                # acceptable.
+                # Note that with a "regular" matrix, a row of all zeros except the RHS means the]
+                # matrix is indeterminant (no solution). However, in this case, since we're
+                # dealing with rotations, any RHS that equals 0 (mod 26) is acceptable.
                 #
-                if all(v == 0 for v in new_row[:-1]) and (new_row[-1] % 26 != 0):
+                all_zeroes = True
+                negate = False
+                for i in range(26):
+                    coeff = new_row[i]
+                    if coeff != 0:
+                        if all_zeroes == True and coeff < 0:
+                            negate = True
+                        all_zeroes = False
+                        if negate == True:
+                            new_row[i] *= -1
+                if negate == True:
+                    new_row[-1] *= -1
+                if (all_zeroes == True) and (new_row[-1] % 26 != 0):
                     return False
                     
         #print("Subsequent rows: %s" % mat[row_index+1:])
