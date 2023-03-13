@@ -18,7 +18,7 @@ class KeyBuilder:
             if word == dependent_word:
                 seen_ourselves = True
                 # Anything other than 1 means that the matrix wasn't properly reduced
-                assert(multiplier == 1.0)
+                assert(multiplier == 1)
                 continue
             if dependent_word in self.rotations:
                 # Keep track of the running sum of other rotations in the row
@@ -28,8 +28,6 @@ class KeyBuilder:
             return None
         assert(seen_ourselves == True)
         calculated_rotation = answer - rotation_sum
-        if not calculated_rotation.is_integer():
-            raise RotationCalculationException(f"non-integer rotation {calculated_rotation} for word {word}, unknowns {unknowns}")
         calculated_rotation = int(calculated_rotation) % 26
         print(f"Calculated rotation for {word} == {calculated_rotation}")
         return calculated_rotation
