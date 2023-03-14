@@ -242,6 +242,7 @@ class RotationMatrix:
         self.known_plaintext_slices = sorted(slices)
         self.unique_words = cipher.unique_words
         self.matrix = []
+        self.reduced = False
 
         slice_index = None
         last_occurrence_of = {}
@@ -295,6 +296,9 @@ class RotationMatrix:
     def reduce(self):
         if gauss_jordan_reduce(self.matrix, self.unique_words) == False:
             raise RotationMatrixException(f"Bad row reduction for {self.known_plaintext_slices}")
+        self.reduced = True
 
     def get_rotations(self):
+        if (self.reduced == False):
+            self.reduce()
         return get_computed_codeword_rotations(self.matrix, self.unique_words)
