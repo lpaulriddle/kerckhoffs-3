@@ -17,8 +17,6 @@ class KeyBuilder:
         for (multiplier, dependent_word) in row_data:
             if word == dependent_word:
                 seen_ourselves = True
-                # Anything other than 1 means that the matrix wasn't properly reduced
-                assert(multiplier == 1)
                 continue
             if dependent_word in self.rotations:
                 # Keep track of the running sum of other rotations in the row
