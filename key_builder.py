@@ -10,7 +10,7 @@ class RotationCalculationException(Exception):
 class KeyBuilder:
     #(ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = range(3)
     (ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = ('calculated', 'guessed', 'known')
-    def calculate_single_row_rotation(self, word, unknowns):
+    def _calculate_single_row_rotation(self, word, unknowns):
         rotation_sum = 0
         seen_ourselves = False
         (row_data, answer) = unknowns
@@ -30,7 +30,7 @@ class KeyBuilder:
         print(f"Calculated rotation for {word} == {calculated_rotation}")
         return calculated_rotation
 
-    def calculate_rotation(self, word, unknowns):
+    def _calculate_rotation(self, word, unknowns):
         required_sum = None
 
         #
@@ -38,7 +38,7 @@ class KeyBuilder:
         #
         for thing in unknowns:
             print(f"Let's take care of {thing}")
-            r = self.calculate_single_row_rotation(word, thing)
+            r = self._calculate_single_row_rotation(word, thing)
             if r != None:
                 if required_sum == None:
                     required_sum = r
@@ -54,7 +54,7 @@ class KeyBuilder:
         print(f"Multi row calc {required_sum}")
         return required_sum
 
-    def generate(self):
+    def _generate(self):
         pos = len(self.rotations)
         starting_pos = pos
 
@@ -68,7 +68,7 @@ class KeyBuilder:
                 self.rotations[val]['type'] = self.ROTATION_KNOWN
             elif val in self.unknown_rotations:
                 try:
-                    rotation = self.calculate_rotation(val, self.unknown_rotations[val])
+                    rotation = self._calculate_rotation(val, self.unknown_rotations[val])
                     if rotation == None:
                         rotation = 0
                         self.rotations[val]['type'] = self.ROTATION_GUESSED
@@ -96,7 +96,7 @@ class KeyBuilder:
         return True
 
     def next(self):
-        self.reset()
+        self._reset()
         pos = len(self.unique_words) - 1
         while (pos >= 0):
             word = self.unique_words[pos]
@@ -105,7 +105,7 @@ class KeyBuilder:
                 rot_val = rotation['rotation'] + 1
                 while rot_val < 26:
                     rotation['rotation'] = rot_val
-                    if self.generate() == True:
+                    if self._generate() == True:
                         return True
                     # That rot_val didn't work, so try incrementing by one
                     rot_val += 1
@@ -125,7 +125,7 @@ class KeyBuilder:
             print("Exhausted all possible rotation combinations")
             return False
 
-    def reset(self):
+    def _reset(self):
         self.plaintext_char_dict = {}
         self.used_key_char_dict = {}
         self.unused_key_chars = set(string.ascii_lowercase)
@@ -239,7 +239,7 @@ class KeyBuilder:
 
         pos = 0
         self.rotations = {}
-        if not self.generate():
+        if not self._generate():
             print("TBD- initial generation failed")
             exit(0)
-        self.reset()
+        self._reset()
