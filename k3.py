@@ -24,7 +24,7 @@ import random
 import sys
 
 from rotation_matrix import build_rotation_matrix
-from split_cipher import read_cipher, split_cipher
+from cipher import Cipher
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stderr)
 
@@ -176,7 +176,6 @@ def get_initial_rotation(key, word, known_rotations, oldrots):
                     solution = rhs - solution
                     if word_coeff > 1.0:
                         solution /= word_coeff
-                    assert(solution.is_integer())
                     solution = int(solution) % 26
                     if word_solution == None:
                         word_solution = solution
@@ -424,8 +423,9 @@ def fit_plaintext(cipher_list, text, offset):
         return p
     return None
 
-(cipher_words, cipher_list) = read_cipher("k2.txt", True)
+cipher = Cipher("k2.txt")
 
+cipher_list = cipher.word_list
 print("cipher_list:", cipher_list)
 print("Cipher length =", len(cipher_list))
 
