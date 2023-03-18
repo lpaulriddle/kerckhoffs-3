@@ -5,6 +5,9 @@ class Cipher:
             self.cipher_slice = cipher.word_list[cipher_index:cipher_index+len(plaintext)]
             self.cipher_index = cipher_index
 
+        def __getitem__(self, i):
+            return (self.cipher_slice[i], self.plaintext[i])
+
         def __iter__(self):
             return zip(self.cipher_slice, self.plaintext)
 
