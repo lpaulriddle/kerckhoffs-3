@@ -4,13 +4,13 @@ from key_builder import KeyBuilder
 from rotation_matrix import RotationMatrix, RotationMatrixException
 from cipher import Cipher
 
-cipher_filename = "k2.txt"
-plaintext1 = 'extraordinairetosolveswapanddo'     # 35
-plaintext2 = 'plaintextforuseascribsatleastforth' # 170
+#cipher_filename = "k2.txt"
+#plaintext1 = 'extraordinairetosolveswapanddo'     # 35
+#plaintext2 = 'plaintextforuseascribsatleastforth' # 170
 
-#cipher_filename = "k3.txt"
-#plaintext1 = 'norththirtyninedegreestenpoint'
-#plaintext2 = 'westseventysixdegreesfiftyonepoint'
+cipher_filename = "k3.txt"
+plaintext1 = 'norththirtyninedegreestenpoint'
+plaintext2 = 'westseventysixdegreesfiftyonepoint'
 
 cipher = Cipher(cipher_filename)
 l1 = len(plaintext1)
