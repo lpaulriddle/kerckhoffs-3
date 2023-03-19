@@ -131,6 +131,27 @@ class KeyBuilder:
         self.unused_key_chars = set(string.ascii_lowercase)
 
     def fit_plaintext(self, known_plaintext_slice):
+        def _backfill(starting_index):
+            r = running_rotation
+            for i in range(starting_index, -1, -1):
+                (word, ch) = known_plaintext_slice[i]
+                print(f"backfill for {word} at index {i}")
+                r += self.rotations[word]['rotation']
+
+                #
+                # Seems like we're repeating a bunch of code here...
+                #
+                key_ch = chr((ord(ch) + r - ord('a')) % 26 + ord('a'))
+                if key_ch in self.used_key_char_dict:
+                    print(f"backfill failed for {word}: calculated key_ch {key_ch} already used")
+                    return False
+                assert(key_ch not in self.used_key_char_dict)
+                self.used_key_char_dict[key_ch] = word
+                self.unused_key_chars.remove(key_ch)
+                assert(word not in self.plaintext_char_dict)
+                self.plaintext_char_dict[word] = key_ch
+            return True
+
         running_rotation = None
         if bool(self.plaintext_char_dict) == False:
             # If this is our first time fitting plaintext with this key, start rotation at 0
@@ -148,6 +169,8 @@ class KeyBuilder:
                     # Is this as easy as calculating the difference between the plaintext char and the key char?
                     running_rotation = (ord(key_ch) - ord(ch)) % 26
                     print(f"running_rotation set to {running_rotation}")
+                    if (i > 0) and (_backfill(i - 1) == False):
+                        return False
                     #print("TBD- compute running_rotation for word {word} slice_index {i} cipher index {i+known_plaintext_slice.cipher_index}")
                     # Need index and plaintext value of (at least one) other location of this word
                     #exit(0)
@@ -161,6 +184,12 @@ class KeyBuilder:
                 if ch != expected_pt_ch:
                     print(f"Key mismatch: plaintext char '{ch}' != expected char '{expected_pt_ch}'")
                     return False
+            elif running_rotation == None:
+
+                #
+                # Keep going until we find a known key character so we can calculate the running rotation
+                #
+                continue
             else:
                 key_ch = chr((ord(ch) + running_rotation - ord('a')) % 26 + ord('a'))
 
