@@ -6,7 +6,7 @@ class Key:
     class DecryptionException(Exception):
         pass
 
-    def decrypt(self, cipher):
+    def decrypt(self, cipher, starting_index):
         running_rotation = 0
         plaintext = ""
 
@@ -22,7 +22,7 @@ class Key:
         #   - I think this means we need a "look ahead" algorithm of some sort...
         # - Set of possible letters is limited to what key_builder didn't pre-calculate for us
         #
-        for word in cipher.word_list:
+        for word in cipher.word_list[starting_index:]:
             plaintext_char = self.plaintext_char_dict.get(word)
             rotation = self.rotation_dict.get(word)
 
