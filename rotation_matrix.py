@@ -59,12 +59,14 @@ def gauss_jordan_reduce(mat, unique_words):
 
         #
         # Reduce/simplify the pivot row if possible
+        # Commented out for now because (a) I don't think it's necessary and (b) I'm not 100%
+        # sure if dividing the RHS produces an accurate result
         #
-        if abs(pivot_val) > 1:
-            row_gcd = math.gcd(*mat[pivot_row_index])
-            if row_gcd > 1:
-                mat[pivot_row_index] = [x // row_gcd for x in mat[pivot_row_index]]
-                pivot_val = mat[pivot_row_index][pivot_col_index]
+        #if abs(pivot_val) > 1:
+        #    row_gcd = math.gcd(*mat[pivot_row_index])
+        #    if row_gcd > 1:
+        #        mat[pivot_row_index] = [x // row_gcd for x in mat[pivot_row_index]]
+        #        pivot_val = mat[pivot_row_index][pivot_col_index]
 
         #
         # Transform other rows so that everything else in the pivot column is zero
@@ -91,7 +93,7 @@ def gauss_jordan_reduce(mat, unique_words):
                 # and also negate the row if the leading non-zero entry is negative. Not the most
                 # elegant or "Pythonic" code, but gets the job done fairly straightforwardly.
                 #
-                # Note that with a "regular" matrix, a row of all zeros except the RHS means the]
+                # Note that with a "regular" matrix, a row of all zeroes except the RHS means the
                 # matrix is indeterminant (no solution). However, in this case, since we're
                 # dealing with rotations, any RHS that equals 0 (mod 26) is acceptable.
                 #
@@ -127,7 +129,8 @@ def get_computed_codeword_rotations(matrix, words):
         l = [(mult, word) for (mult, word) in zip(row, words) if mult != 0]
         if len(l) > 0:
             # First non-zero coefficient should always be 1 for a matrix in reduced row
-            # echelon form. Anything else means we have a bug.
+            # echelon form. Anything else means we have a bug. (Commented out- this is not
+            # the case for an integer-only row reduced matrix)
             # 
             #assert(l[0][0] == 1)
             print("non-zero multipliers:", l, "=>", row[-1])
