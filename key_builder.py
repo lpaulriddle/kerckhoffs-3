@@ -224,7 +224,9 @@ class KeyBuilder:
     def key(self):
         unused_key_chars = list(self.unused_key_chars)
         unused_key_chars.sort()
-        return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
+        #return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
+        # Just use stuff we can directly calculate. Seems to be sufficient to decrypt #3
+        return Key(self.plaintext_char_dict, self.known_rotations, unused_key_chars)
 
     def stats(self):
         num_rotations = len(self.rotations)
