@@ -6,8 +6,8 @@ class Key:
     class DecryptionException(Exception):
         pass
 
-    def decrypt(self, cipher, starting_index):
-        running_rotation = 0
+    def decrypt(self, cipher, starting_index, starting_rotation):
+        running_rotation = starting_rotation
         plaintext = ""
 
         #
@@ -28,8 +28,9 @@ class Key:
 
             if plaintext_char == None:
                 print(f"Missing plaintext character for {word}")
-                return plaintext
-            plaintext_char = chr((ord(plaintext_char) - ord('a') - running_rotation) % 26 + ord('a'))
+                plaintext_char = '?'
+            else:
+                plaintext_char = chr((ord(plaintext_char) - ord('a') - running_rotation) % 26 + ord('a'))
             plaintext += plaintext_char
             if rotation == None:
                 # Unknown rotation: need to look ahead to find next word without a mapped plaintext char

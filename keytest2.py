@@ -39,7 +39,8 @@ if matrix_rotations != None:
                 # Note - this naively passes the entire cipher to decrypt() - needs adjusting to work with slices
                 # that don't start at the beginning of the cipher.
                 #print("decryption:",key.decrypt(cipher.word_list),"key1rot",key1.plaintext_char_dict,"key2rot",key2.plaintext_char_dict,"numrots",len(set(list(key1.rotation_dict.keys())+list(key2.rotation_dict.keys()))))
-                print("decryption:",key.decrypt(cipher, min(slice1.cipher_index, slice2.cipher_index)))
+                print("decryption:",key.decrypt(cipher, slice1.cipher_index, 0))
+                print("decryption:",key.decrypt(cipher, slice2.cipher_index, 0))
                 good_key = True
         if good_key == True:
             good_count += 1
