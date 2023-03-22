@@ -4,9 +4,6 @@ import string
 class KeyBuilderException(Exception):
     pass
 
-class RotationCalculationException(Exception):
-    pass
-
 class KeyBuilder:
     #(ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = range(3)
     (ROTATION_CALCULATED, ROTATION_GUESSED, ROTATION_KNOWN) = ('calculated', 'guessed', 'known')
@@ -37,7 +34,6 @@ class KeyBuilder:
         # Loop through the list of rows, calculating any values we can
         #
         for thing in unknowns:
-            print(f"Let's take care of {thing}")
             r = self._calculate_single_row_rotation(word, thing)
             if r != None:
                 if required_sum == None:
@@ -50,7 +46,7 @@ class KeyBuilder:
                     # Assuming the code is correct, the matrix is properly reduced, and we work on
                     # unknown columns from right to left, this condition doesn't seem to happen.
                     #
-                    raise Exception(f"Multi-row equation mismatch: {required_sum} != {r} for {unknowns}")
+                    raise KeyBuilderException(f"Multi-row equation mismatch: {required_sum} != {r} for {unknowns}")
         print(f"Multi row calc {required_sum}")
         return required_sum
 
@@ -67,26 +63,12 @@ class KeyBuilder:
                 rotation = self.known_rotations[val]
                 self.rotations[val]['type'] = self.ROTATION_KNOWN
             elif val in self.unknown_rotations:
-                try:
-                    rotation = self._calculate_rotation(val, self.unknown_rotations[val])
-                    if rotation == None:
-                        rotation = 0
-                        self.rotations[val]['type'] = self.ROTATION_GUESSED
-                    else:
-                        self.rotations[val]['type'] = self.ROTATION_CALCULATED
-                except RotationCalculationException:
-
-                    #
-                    # Right now, this only happens when the calculated rotation is not an
-                    # integer, in which case the key is invalid and we just want to skip it.
-                    # Becaue of how the code currently works, this means that we need to
-                    # delete everything we computed here and return to the caller with a
-                    # "clean slate" so that everything will get re-computed properly after
-                    # incrementing the guessed value.
-                    # 
-                    for i in range(starting_pos, pos + 1):
-                        del self.rotations[self.unique_words[i]]
-                    return False
+                rotation = self._calculate_rotation(val, self.unknown_rotations[val])
+                if rotation == None:
+                    rotation = 0
+                    self.rotations[val]['type'] = self.ROTATION_GUESSED
+                else:
+                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
                     
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
@@ -103,12 +85,10 @@ class KeyBuilder:
             rotation = self.rotations[word]
             if (rotation['type'] == self.ROTATION_GUESSED):
                 rot_val = rotation['rotation'] + 1
-                while rot_val < 26:
+                if rot_val < 26:
                     rotation['rotation'] = rot_val
-                    if self._generate() == True:
-                        return True
-                    # That rot_val didn't work, so try incrementing by one
-                    rot_val += 1
+                    self._generate()
+                    return True
                 if rot_val > 26:
                     # This "should not happen"
                     raise KeyBuilderException(f"Guessed key val for {word} > 26")
@@ -246,8 +226,7 @@ class KeyBuilder:
         # it again here
         #
         self.unique_words = list(matrix_rotations.keys())
-        self.unique_words.sort()
-        self.unique_words.reverse()
+        self.unique_words.sort(reverse = True)
         print("unique_words", self.unique_words)
 
         #
@@ -270,7 +249,5 @@ class KeyBuilder:
 
         pos = 0
         self.rotations = {}
-        if not self._generate():
-            print("TBD- initial generation failed")
-            exit(0)
+        self._generate()
         self._reset()
