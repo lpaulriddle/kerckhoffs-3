@@ -136,7 +136,7 @@ class RotationMatrix:
 
                 secondary_pivot_col_val = secondary_row[pivot_col_index]
                 if secondary_pivot_col_val != 0:
-                    lcm = math.lcm(pivot_val, secondary_pivot_col_val)
+                    lcm = (pivot_val * secondary_pivot_col_val) // math.gcd(pivot_val, secondary_pivot_col_val)
                     secondary_row = [x * (lcm // secondary_pivot_col_val) for x in secondary_row]
                     pivot_row_multiple = [x * (lcm // pivot_val) for x in pivot_row]
 
