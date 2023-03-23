@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from key_builder import KeyBuilder
-from rotation_matrix import RotationMatrix, RotationMatrixException
 from cipher import Cipher
 
 #cipher_filename = "k2.txt"
@@ -33,26 +31,23 @@ for i1 in range(0, len(cipher) - l1 + 1):
             continue
         slice2 = cipher.known_plaintext_slice(plaintext2, i2)
         print(f"slice1 {i1}-{i1+l1} slice2 {i2}-{i2+l2}")
-        #matrix_rotations = build_rotation_matrix_new(cipher.word_list, [(plaintext1, i1), (plaintext2, i2)])
-        try:
-            matrix_rotations = RotationMatrix(cipher, slice1, slice2).get_rotations()
+        key_builder = cipher.get_key_builder(slice1, slice2)
+        if key_builder != None:
             num_good += 1
 
             #
             # Need to store: number of possible keys, the key object itself, and the plaintext indices
             # Dictionary of lists of {num_possible_keys: [(i1, i2), Key]} ?
             #
-            k = KeyBuilder(matrix_rotations)
-            s = k.stats()
-            num_possible_keys = s['num_possible_keys']
+            key_builder_stats = key_builder.stats()
+            num_possible_keys = key_builder_stats['num_possible_keys']
             try:
                 count_dict[num_possible_keys] += 1
             except KeyError:
                 count_dict[num_possible_keys] = 1
             print(f"numkeys:{i1}:{i2}:{num_possible_keys}")
-            print(f"keystats:{s}")
-        except RotationMatrixException as e:
+            print(f"keystats:{key_builder_stats}")
+        else:
             num_bad += 1
-            print(e)
 print("slice1",count_dict)
 print(f"num_good {num_good} num_bad {num_bad}")

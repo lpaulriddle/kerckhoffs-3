@@ -1,11 +1,14 @@
 import collections
+import logging
 import math
+
+log = logging.getLogger(__name__)
 
 class RotationMatrixException(Exception):
     pass
 
 class RotationMatrix:
-    def __init__(self, cipher, *slices):
+    def __init__(self, cipher, slices):
         self.known_plaintext_slices = sorted(slices)
         self.unique_words = cipher.unique_words
         self.matrix = []
@@ -23,7 +26,6 @@ class RotationMatrix:
             for (i, (word, ch)) in enumerate(pt_slice):
                 # Get the word's index in the cipher
                 word_index = i + pt_slice.cipher_index
-                #print("wordindex", word_index)
 
                 #
                 # If we've seen this word before, and have known plaintext at both locations, then
@@ -33,7 +35,7 @@ class RotationMatrix:
                     (last_index, last_pt_ch) = last_occurrence_of[word]
                     assert(word_index > last_index)
                     required_rot = (ord(ch) - ord(last_pt_ch)) % 26
-                    print(f"Required total rotation between {last_index} and {word_index} = {required_rot}")
+                    log.debug(f"Required total rotation between {last_index} and {word_index} = {required_rot}")
 
                     #
                     # Count the number of occurrences of each word in the range. These will end up
@@ -87,7 +89,7 @@ class RotationMatrix:
             if pivot_row_num >= 0:
                 # Swap rows if needed
                 if pivot_row_num > starting_row_num:
-                    print(f"Swapping rows {starting_row_num} and {pivot_row_num}")
+                    log.debug(f"Swapping rows {starting_row_num} and {pivot_row_num}")
                     mat[starting_row_num], mat[pivot_row_num] = mat[pivot_row_num], mat[starting_row_num]
                 return col_num
 
@@ -101,7 +103,7 @@ class RotationMatrix:
         # If we get here, then there were no non-zero entries anywhere in the matrix at or below
         # the starting row (which basically means we're finished)
         #
-        print("No pivot found")
+        log.debug("No pivot found")
         return None
 
     def reduce(self):
@@ -127,7 +129,6 @@ class RotationMatrix:
             # Transform other rows so that everything else in the pivot column is zero
             #
             pivot_row = self.matrix[pivot_row_index]
-            #print(f"Pivot row: {pivot_row}; first nonzero index: {pivot_col_index}")
             for secondary_row_index in range(0, len(self.matrix)):
                 if secondary_row_index == pivot_row_index:
                     # Skip the pivot row
@@ -167,8 +168,8 @@ class RotationMatrix:
                     if (all_zeroes == True) and (new_row[-1] % 26 != 0):
                         raise RotationMatrixException(f"Bad row reduction for {self.known_plaintext_slices}")
 
-            print(f"After {pivot_row_index+1} iteration(s), matrix now:")
-            print(self)
+            log.debug(f"After {pivot_row_index+1} iteration(s), matrix now:")
+            log.debug("\n" + self.__str__())
 
         self.reduced = True
 
@@ -187,7 +188,7 @@ class RotationMatrix:
                 # the case for an integer-only row reduced matrix)
                 #
                 #assert(l[0][0] == 1)
-                print("non-zero multipliers:", l, "=>", row[-1])
+                log.debug(f"non-zero multipliers: {l} => {row[-1]}")
             for (mult, word) in l:
                 #
                 # Build a list of row equations for this code word for later evaluation.
@@ -198,5 +199,5 @@ class RotationMatrix:
                 else:
                     rotations[word] = [eq]
 
-        print(f"{len(rotations)} rotations: {rotations}")
+        log.debug(f"{len(rotations)} rotations: {rotations}")
         return(rotations)

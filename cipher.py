@@ -1,3 +1,9 @@
+from key_builder import KeyBuilder
+from rotation_matrix import RotationMatrix, RotationMatrixException
+import logging
+
+log = logging.getLogger(__name__)
+
 class Cipher:
     class KnownPlaintextSlice:
         def __init__(self, cipher, plaintext, cipher_index):
@@ -19,6 +25,14 @@ class Cipher:
 
     def known_plaintext_slice(self, plaintext, cipher_index):
         return self.KnownPlaintextSlice(self, plaintext, cipher_index)
+
+    def get_key_builder(self, *known_pt_slices):
+        try:
+            matrix_rotations = RotationMatrix(self, known_pt_slices).get_rotations()
+            return KeyBuilder(matrix_rotations, known_pt_slices)
+        except RotationMatrixException as e:
+            log.debug(e)
+        return None
 
     def __init__(self, fname):
         def split_cipher(cipher_words, cipher_text):
@@ -78,7 +92,7 @@ class Cipher:
                 # Build a list of words which occur at least FREQ_THRESHOLD times in the cipher
                 word_candidates = [foo for foo in word_counts.keys() if word_counts[foo] >= FREQ_THRESHOLD]
                 if len(word_candidates) > 0:
-                    print("Found %d potential words of length %d:" % (len(word_candidates), word_length), word_candidates)
+                    log.debug(f"Found {len(word_candidates)} potential words of length {word_length}: {word_candidates}")
 
                 #
                 # Replace each occurrence of the candidate word with a separator, so that we can identify
@@ -132,7 +146,7 @@ class Cipher:
                     assert len(raw_cipher.replace(' ', '')) == 0, f"leftovers: {raw_cipher}"
 
                 # A successful run should report 26 cipher words with no leftovers
-                print(f"Found {len(cipher_words)} cipher words: {cipher_words}")
+                log.debug(f"Found {len(cipher_words)} cipher words: {cipher_words}")
                 assert(len(cipher_words) == 26)
 
             return(cipher_words, split_cipher(cipher_words, r))

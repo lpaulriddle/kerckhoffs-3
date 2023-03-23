@@ -1,10 +1,10 @@
 from key import Key
+import logging
 import string
 
-class KeyBuilderException(Exception):
-    pass
+log = logging.getLogger(__name__)
 
-class RotationCalculationException(Exception):
+class KeyBuilderException(Exception):
     pass
 
 class KeyBuilder:
@@ -22,12 +22,12 @@ class KeyBuilder:
                 # Keep track of the running sum of other rotations in the row
                 rotation_sum += multiplier * self.rotations[dependent_word]['rotation']
                 continue
-            print(f"Not enough known rotations to calculate {word}")
+            log.debug(f"Not enough known rotations to calculate {word}")
             return None
         assert(seen_ourselves == True)
         calculated_rotation = answer - rotation_sum
         calculated_rotation = int(calculated_rotation) % 26
-        print(f"Calculated rotation for {word} == {calculated_rotation}")
+        log.debug(f"Calculated rotation for {word} == {calculated_rotation}")
         return calculated_rotation
 
     def _calculate_rotation(self, word, unknowns):
@@ -37,7 +37,6 @@ class KeyBuilder:
         # Loop through the list of rows, calculating any values we can
         #
         for thing in unknowns:
-            print(f"Let's take care of {thing}")
             r = self._calculate_single_row_rotation(word, thing)
             if r != None:
                 if required_sum == None:
@@ -50,8 +49,8 @@ class KeyBuilder:
                     # Assuming the code is correct, the matrix is properly reduced, and we work on
                     # unknown columns from right to left, this condition doesn't seem to happen.
                     #
-                    raise Exception(f"Multi-row equation mismatch: {required_sum} != {r} for {unknowns}")
-        print(f"Multi row calc {required_sum}")
+                    raise KeyBuilderException(f"Multi-row equation mismatch: {required_sum} != {r} for {unknowns}")
+        log.debug(f"Multi row calc = {required_sum}")
         return required_sum
 
     def _generate(self):
@@ -67,35 +66,21 @@ class KeyBuilder:
                 rotation = self.known_rotations[val]
                 self.rotations[val]['type'] = self.ROTATION_KNOWN
             elif val in self.unknown_rotations:
-                try:
-                    rotation = self._calculate_rotation(val, self.unknown_rotations[val])
-                    if rotation == None:
-                        rotation = 0
-                        self.rotations[val]['type'] = self.ROTATION_GUESSED
-                    else:
-                        self.rotations[val]['type'] = self.ROTATION_CALCULATED
-                except RotationCalculationException:
-
-                    #
-                    # Right now, this only happens when the calculated rotation is not an
-                    # integer, in which case the key is invalid and we just want to skip it.
-                    # Becaue of how the code currently works, this means that we need to
-                    # delete everything we computed here and return to the caller with a
-                    # "clean slate" so that everything will get re-computed properly after
-                    # incrementing the guessed value.
-                    # 
-                    for i in range(starting_pos, pos + 1):
-                        del self.rotations[self.unique_words[i]]
-                    return False
+                rotation = self._calculate_rotation(val, self.unknown_rotations[val])
+                if rotation == None:
+                    rotation = 0
+                    self.rotations[val]['type'] = self.ROTATION_GUESSED
+                else:
+                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
                     
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
             self.rotations[val]['rotation'] = rotation
-            print(f"position {pos} rots {self.rotations}")
+            log.debug(f"position {pos} rots {self.rotations}")
             pos += 1
         return True
 
-    def next(self):
+    def _next(self):
         self._reset()
         pos = len(self.unique_words) - 1
         while (pos >= 0):
@@ -103,12 +88,10 @@ class KeyBuilder:
             rotation = self.rotations[word]
             if (rotation['type'] == self.ROTATION_GUESSED):
                 rot_val = rotation['rotation'] + 1
-                while rot_val < 26:
+                if rot_val < 26:
                     rotation['rotation'] = rot_val
-                    if self._generate() == True:
-                        return True
-                    # That rot_val didn't work, so try incrementing by one
-                    rot_val += 1
+                    self._generate()
+                    return True
                 if rot_val > 26:
                     # This "should not happen"
                     raise KeyBuilderException(f"Guessed key val for {word} > 26")
@@ -122,7 +105,7 @@ class KeyBuilder:
         else:
             # No more guesses possible (either no guessed words, or
             # exhausted all possible guessed values)
-            print("Exhausted all possible rotation combinations")
+            log.info("Exhausted all possible rotation combinations")
             return False
 
     def _reset(self):
@@ -130,12 +113,12 @@ class KeyBuilder:
         self.used_key_char_dict = {}
         self.unused_key_chars = set(string.ascii_lowercase)
 
-    def fit_plaintext(self, known_plaintext_slice):
+    def _fit_plaintext(self, known_plaintext_slice):
         def _backfill(starting_index):
             r = running_rotation
             for i in range(starting_index, -1, -1):
                 (word, ch) = known_plaintext_slice[i]
-                print(f"backfill for {word} at index {i}")
+                log.debug(f"backfill for {word} at index {i}")
                 r += self.rotations[word]['rotation']
 
                 #
@@ -143,7 +126,7 @@ class KeyBuilder:
                 #
                 key_ch = chr((ord(ch) + r - ord('a')) % 26 + ord('a'))
                 if key_ch in self.used_key_char_dict:
-                    print(f"backfill failed for {word}: calculated key_ch {key_ch} already used")
+                    log.debug(f"backfill failed for {word}: calculated key_ch {key_ch} already used")
                     return False
                 assert(key_ch not in self.used_key_char_dict)
                 self.used_key_char_dict[key_ch] = word
@@ -168,21 +151,18 @@ class KeyBuilder:
                 if running_rotation == None:
                     # Is this as easy as calculating the difference between the plaintext char and the key char?
                     running_rotation = (ord(key_ch) - ord(ch)) % 26
-                    print(f"running_rotation set to {running_rotation}")
+                    log.debug(f"running_rotation set to {running_rotation}")
                     if (i > 0) and (_backfill(i - 1) == False):
                         return False
-                    #print("TBD- compute running_rotation for word {word} slice_index {i} cipher index {i+known_plaintext_slice.cipher_index}")
-                    # Need index and plaintext value of (at least one) other location of this word
-                    #exit(0)
                 expected_pt_ch = chr((ord(key_ch) - running_rotation - ord('a')) % 26 + ord('a'))
-                print(f"Found {word} keychar {key_ch} pt char {ch} (expected {expected_pt_ch})")
+                log.debug(f"Found {word} keychar {key_ch} pt char {ch} (expected {expected_pt_ch})")
 
                 #
                 # Key rotation mismatch- This should never occur if the plaintext matches the cipher
                 # slice and the key satisfies the matrix
                 #
                 if ch != expected_pt_ch:
-                    print(f"Key mismatch: plaintext char '{ch}' != expected char '{expected_pt_ch}'")
+                    log.debug(f"Key mismatch: plaintext char '{ch}' != expected char '{expected_pt_ch}'")
                     return False
             elif running_rotation == None:
 
@@ -205,23 +185,23 @@ class KeyBuilder:
                 # would be possible to determine this mathematically somehow instead of iteratively.
                 #
                 if key_ch in self.used_key_char_dict:
-                    print(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
+                    log.debug(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
                     return False
                 self.used_key_char_dict[key_ch] = word
                 self.unused_key_chars.remove(key_ch)
                 self.plaintext_char_dict[word] = key_ch
-                print(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
+                log.debug(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
 
             if rot_val == None:
                 # unknown rotation - can't continue
-                print(f"Rotation for {word} not known - finishing")
+                log.info(f"Rotation for {word} not known - finishing")
                 return True
             running_rotation = (running_rotation - rot_val) % 26
-            print(f"Running rotation = {running_rotation}")
-        print("Successful fit")
+            log.debug(f"Running rotation = {running_rotation}")
+        log.info("Successful fit")
         return True
 
-    def key(self):
+    def _key(self):
         unused_key_chars = list(self.unused_key_chars)
         unused_key_chars.sort()
         #return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
@@ -238,7 +218,8 @@ class KeyBuilder:
                 'num_guessed_rotations': num_guessed_rotations,
                 'num_possible_keys': num_possible_keys}
 
-    def __init__(self, matrix_rotations):
+    def __init__(self, matrix_rotations, known_pt_slices):
+        self._known_pt_slices = known_pt_slices
 
         #
         # We need to get the list of words in the order they appear in the matrix
@@ -246,9 +227,8 @@ class KeyBuilder:
         # it again here
         #
         self.unique_words = list(matrix_rotations.keys())
-        self.unique_words.sort()
-        self.unique_words.reverse()
-        print("unique_words", self.unique_words)
+        self.unique_words.sort(reverse = True)
+        log.debug(f"unique_words: {self.unique_words}")
 
         #
         # Pull out keys we know for sure ahead of time
@@ -257,20 +237,31 @@ class KeyBuilder:
         #
         single_row_vars = dict([(a,b[0]) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) == 1])
         self.known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
-        print("known_rotations", self.known_rotations)
+        log.debug(f"known_rotations: {self.known_rotations}")
 
         #
         # Now, pull out all the unknowns, which basically means "anything not in known_rotations"
         # This includes unknown rotations that appear in one or more rows of the matrix
         #
         self.unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in self.known_rotations])
-        print("unknown_rotations", self.unknown_rotations)
+        log.debug(f"unknown_rotations: {self.unknown_rotations}")
 
         assert(len(self.known_rotations) + len(self.unknown_rotations)) == len(matrix_rotations)
 
         pos = 0
         self.rotations = {}
-        if not self._generate():
-            print("TBD- initial generation failed")
-            exit(0)
+        self._generate()
         self._reset()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if len(self.unique_words) == 0:
+            raise StopIteration
+        while not (all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices)):
+            if self._next() == False:
+                raise StopIteration
+        key = self._key()
+        self._next()
+        return key
