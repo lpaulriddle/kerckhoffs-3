@@ -60,19 +60,17 @@ class KeyBuilder:
         while pos < len(self._unique_words):
             val = self._unique_words[pos]
             assert(val not in self.rotations)
-            self.rotations[val] = {}
             rotation = None
             if val in self.known_rotations:
                 rotation = self.known_rotations[val]
-                self.rotations[val]['type'] = self.ROTATION_KNOWN
+                self.rotations[val] = { 'type': self.ROTATION_KNOWN }
             elif val in self.unknown_rotations:
                 rotation = self._calculate_rotation(val, self.unknown_rotations[val])
                 if rotation == None:
                     rotation = 0
-                    self.rotations[val]['type'] = self.ROTATION_GUESSED
+                    self.rotations[val] = { 'type': self.ROTATION_GUESSED }
                 else:
-                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
-                    
+                    self.rotations[val] = { 'type': self.ROTATION_CALCULATED }
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
             self.rotations[val]['rotation'] = rotation
@@ -222,14 +220,25 @@ class KeyBuilder:
                 'num_guessed_rotations': num_guessed_rotations,
                 'num_possible_keys': num_possible_keys}
 
-    def __init__(self, matrix_rotations, known_pt_slices, known_rotations_only=False):
+    def __init__(self, matrix, known_pt_slices, known_rotations_only=False):
         self._known_pt_slices = known_pt_slices
+        matrix_rotations = matrix.get_rotations()
+
+        #
+        # Indicates whether generated keys should include known rotations only, or include unknown/guessed rotations
+        # Usually, we want the latter, but the former might be useful in some cases
+        #
         self.known_rotations_only = known_rotations_only
 
         #
-        # We need to get the list of words in the order they appear in the matrix
-        # This gets sorted in the reduction code, so just need to return that somehow to avoid doing
-        # it again here
+        # Note- the code doesn't currently handle words that are not in the rotation matrix, e.g., words that occur
+        # zero or one times in the plaintext sample(s). Since these words have no dependencies in the matrix, their
+        # rotation values are not bound, and therefore, each one will increase the number of possible keys by a
+        # factor of 26. It shouldn't be too difficult to make the code support these, but it should probably be
+        # optional.
+        #
+        # The upshot of this lack of support is that we can't just set self._unique_words to matrix.unique_words -
+        # We need to use only the words that are in the matrix.
         #
         self._unique_words = list(matrix_rotations.keys())
         self._unique_words.sort(reverse = True)
