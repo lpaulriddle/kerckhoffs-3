@@ -208,9 +208,9 @@ class KeyBuilder:
     def _key(self):
         unused_key_chars = list(self.unused_key_chars)
         unused_key_chars.sort()
-        #return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
-        # Just use stuff we can directly calculate. Seems to be sufficient to decrypt #3
-        return Key(self.plaintext_char_dict, self.known_rotations, unused_key_chars)
+        if self.known_rotations_only == True:
+            return Key(self.plaintext_char_dict, self.known_rotations, unused_key_chars)
+        return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
 
     def stats(self):
         num_rotations = len(self.rotations)
@@ -222,8 +222,9 @@ class KeyBuilder:
                 'num_guessed_rotations': num_guessed_rotations,
                 'num_possible_keys': num_possible_keys}
 
-    def __init__(self, matrix_rotations, known_pt_slices):
+    def __init__(self, matrix_rotations, known_pt_slices, known_rotations_only=False):
         self._known_pt_slices = known_pt_slices
+        self.known_rotations_only = known_rotations_only
 
         #
         # We need to get the list of words in the order they appear in the matrix
@@ -264,6 +265,3 @@ class KeyBuilder:
             if all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices):
                 return self._key()
         raise StopIteration
-
-
-
