@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 from cipher import Cipher
+import logging
+
+logging.basicConfig(level=logging.WARN, format='%(asctime)s - %(module)s - %(levelname)s - %(message)s')
 
 cipher = Cipher("k3.txt")
 slice1 = cipher.known_plaintext_slice('norththirtyninedegreestenpoint', 46)

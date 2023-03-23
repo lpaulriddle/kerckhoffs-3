@@ -1,6 +1,7 @@
+import logging
 import string
 
-from enum import Enum
+log = logging.getLogger(__name__)
 
 class Key:
     class DecryptionException(Exception):
@@ -27,7 +28,7 @@ class Key:
             rotation = self.rotation_dict.get(word)
 
             if plaintext_char == None:
-                print(f"Missing plaintext character for {word}")
+                log.debug(f"Missing plaintext character for {word}")
                 plaintext_char = '?'
             else:
                 plaintext_char = chr((ord(plaintext_char) - ord('a') - running_rotation) % 26 + ord('a'))
@@ -35,7 +36,7 @@ class Key:
             if rotation == None:
                 # Unknown rotation: need to look ahead to find next word without a mapped plaintext char
                 # character
-                print(f"Missing rotation for {word}")
+                log.debug(f"Missing rotation for {word}")
                 return plaintext
             else:
                 running_rotation = (running_rotation - rotation) % 26
