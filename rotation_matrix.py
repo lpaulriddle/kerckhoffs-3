@@ -5,7 +5,7 @@ class RotationMatrixException(Exception):
     pass
 
 class RotationMatrix:
-    def __init__(self, cipher, *slices):
+    def __init__(self, cipher, slices):
         self.known_plaintext_slices = sorted(slices)
         self.unique_words = cipher.unique_words
         self.matrix = []

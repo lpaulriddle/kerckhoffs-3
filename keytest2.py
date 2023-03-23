@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from key_builder import KeyBuilder
-from rotation_matrix import RotationMatrix
 from cipher import Cipher
 
 cipher = Cipher("k3.txt")
@@ -16,14 +15,13 @@ slice2 = cipher.known_plaintext_slice('westseventysixdegreesfiftyonepoint', 114)
 #slice2 = cipher.known_plaintext_slice('plaintextforuseascribsatleastforth', 170)
 #matrix_rotations = build_rotation_matrix_new(cipher.word_list, ((slice1.plaintext, 0), (slice2.plaintext, 245)))
 
-matrix_rotations = RotationMatrix(cipher, slice1, slice2).get_rotations()
+key_builder = cipher.get_key_builder(slice1, slice2)
 
 #cipher = Cipher("k2.txt", True)
 #plaintext = 'congratulationsyouareacryptograph'
 #matrix_rotations = build_rotation_matrix(cipher.word_list, plaintext, 0)
 
-if matrix_rotations != None:
-    key_builder = KeyBuilder(matrix_rotations)
+if key_builder != None:
     print(f"initial rotations {key_builder.rotations}")
     good_count = 0
     bad_count = 0

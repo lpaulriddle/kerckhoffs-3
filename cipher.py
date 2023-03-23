@@ -1,3 +1,6 @@
+from key_builder import KeyBuilder
+from rotation_matrix import RotationMatrix, RotationMatrixException
+
 class Cipher:
     class KnownPlaintextSlice:
         def __init__(self, cipher, plaintext, cipher_index):
@@ -19,6 +22,14 @@ class Cipher:
 
     def known_plaintext_slice(self, plaintext, cipher_index):
         return self.KnownPlaintextSlice(self, plaintext, cipher_index)
+
+    def get_key_builder(self, *known_pt_slices):
+        try:
+            matrix_rotations = RotationMatrix(self, known_pt_slices).get_rotations()
+            return KeyBuilder(matrix_rotations)
+        except RotationMatrixException as e:
+            print(e)
+        return None
 
     def __init__(self, fname):
         def split_cipher(cipher_words, cipher_text):
