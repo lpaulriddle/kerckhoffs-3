@@ -81,6 +81,11 @@ class KeyBuilder:
         return True
 
     def _next(self):
+        if not self.rotations:
+
+            # First time through - generate the initial rotation combo
+            self._generate()
+            return True
         pos = len(self._unique_words) - 1
         while (pos >= 0):
             word = self._unique_words[pos]
@@ -219,7 +224,6 @@ class KeyBuilder:
 
     def __init__(self, matrix_rotations, known_pt_slices):
         self._known_pt_slices = known_pt_slices
-        self._seq = 0
 
         #
         # We need to get the list of words in the order they appear in the matrix
@@ -250,20 +254,16 @@ class KeyBuilder:
 
         pos = 0
         self.rotations = {}
-        self._generate()
-        self._reset()
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if len(self._unique_words) == 0:
-            raise StopIteration
-        while True:
+        while self._next() == True:
             self._reset()
             if all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices):
-                break
-            if self._next() == False:
-                raise StopIteration
-        self._next()
-        return self._key()
+                return self._key()
+        raise StopIteration
+
+
+
