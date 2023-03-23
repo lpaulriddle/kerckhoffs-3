@@ -26,7 +26,7 @@ class Cipher:
     def get_key_builder(self, *known_pt_slices):
         try:
             matrix_rotations = RotationMatrix(self, known_pt_slices).get_rotations()
-            return KeyBuilder(matrix_rotations)
+            return KeyBuilder(matrix_rotations, known_pt_slices)
         except RotationMatrixException as e:
             print(e)
         return None

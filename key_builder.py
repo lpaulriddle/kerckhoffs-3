@@ -77,7 +77,7 @@ class KeyBuilder:
             pos += 1
         return True
 
-    def next(self):
+    def _next(self):
         self._reset()
         pos = len(self.unique_words) - 1
         while (pos >= 0):
@@ -110,7 +110,7 @@ class KeyBuilder:
         self.used_key_char_dict = {}
         self.unused_key_chars = set(string.ascii_lowercase)
 
-    def fit_plaintext(self, known_plaintext_slice):
+    def _fit_plaintext(self, known_plaintext_slice):
         def _backfill(starting_index):
             r = running_rotation
             for i in range(starting_index, -1, -1):
@@ -201,7 +201,7 @@ class KeyBuilder:
         print("Successful fit")
         return True
 
-    def key(self):
+    def _key(self):
         unused_key_chars = list(self.unused_key_chars)
         unused_key_chars.sort()
         #return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
@@ -218,7 +218,8 @@ class KeyBuilder:
                 'num_guessed_rotations': num_guessed_rotations,
                 'num_possible_keys': num_possible_keys}
 
-    def __init__(self, matrix_rotations):
+    def __init__(self, matrix_rotations, known_pt_slices):
+        self._known_pt_slices = known_pt_slices
 
         #
         # We need to get the list of words in the order they appear in the matrix
@@ -251,3 +252,16 @@ class KeyBuilder:
         self.rotations = {}
         self._generate()
         self._reset()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if len(self.unique_words) == 0:
+            raise StopIteration
+        while not (all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices)):
+            if self._next() == False:
+                raise StopIteration
+        key = self._key()
+        self._next()
+        return key
