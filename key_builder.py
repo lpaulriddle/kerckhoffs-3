@@ -57,8 +57,8 @@ class KeyBuilder:
         pos = len(self.rotations)
         starting_pos = pos
 
-        while pos < len(self.unique_words):
-            val = self.unique_words[pos]
+        while pos < len(self._unique_words):
+            val = self._unique_words[pos]
             assert(val not in self.rotations)
             self.rotations[val] = {}
             rotation = None
@@ -81,10 +81,9 @@ class KeyBuilder:
         return True
 
     def _next(self):
-        self._reset()
-        pos = len(self.unique_words) - 1
+        pos = len(self._unique_words) - 1
         while (pos >= 0):
-            word = self.unique_words[pos]
+            word = self._unique_words[pos]
             rotation = self.rotations[word]
             if (rotation['type'] == self.ROTATION_GUESSED):
                 rot_val = rotation['rotation'] + 1
@@ -220,15 +219,16 @@ class KeyBuilder:
 
     def __init__(self, matrix_rotations, known_pt_slices):
         self._known_pt_slices = known_pt_slices
+        self._seq = 0
 
         #
         # We need to get the list of words in the order they appear in the matrix
         # This gets sorted in the reduction code, so just need to return that somehow to avoid doing
         # it again here
         #
-        self.unique_words = list(matrix_rotations.keys())
-        self.unique_words.sort(reverse = True)
-        log.debug(f"unique_words: {self.unique_words}")
+        self._unique_words = list(matrix_rotations.keys())
+        self._unique_words.sort(reverse = True)
+        log.debug(f"unique_words: {self._unique_words}")
 
         #
         # Pull out keys we know for sure ahead of time
@@ -257,11 +257,13 @@ class KeyBuilder:
         return self
 
     def __next__(self):
-        if len(self.unique_words) == 0:
+        if len(self._unique_words) == 0:
             raise StopIteration
-        while not (all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices)):
+        while True:
+            self._reset()
+            if all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices):
+                break
             if self._next() == False:
                 raise StopIteration
-        key = self._key()
         self._next()
-        return key
+        return self._key()
