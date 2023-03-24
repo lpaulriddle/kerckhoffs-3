@@ -1,6 +1,6 @@
 A solver for [Kerckhoffs (part 3)](https://coord.info/GC9PC6T)
 
-The solution method, given the cipher as one long string of concatenated code words, and two strings of known plaintext located
+Given the cipher as one long string of concatenated code words, and two strings of known plaintext located
 somewhere within the cipher:
 
 1. Determine the 26 unique code words using an algorithm that looks for repeated sequences of numbers in the ciphertext.
