@@ -256,14 +256,14 @@ class KeyBuilder:
         #
         single_row_vars = dict([(a,b[0]) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) == 1])
         self.known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
-        log.debug(f"known_rotations: {self.known_rotations}")
+        log.debug(f"{len(self.known_rotations)} known_rotations: {self.known_rotations}")
 
         #
         # Now, pull out all the unknowns, which basically means "anything not in known_rotations"
         # This includes unknown rotations that appear in one or more rows of the matrix
         #
         self.unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in self.known_rotations])
-        log.debug(f"unknown_rotations: {self.unknown_rotations}")
+        log.debug(f"{len(self.unknown_rotations)} unknown_rotations: {self.unknown_rotations}")
 
         assert(len(self.known_rotations) + len(self.unknown_rotations)) == len(matrix_rotations)
 
