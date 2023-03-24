@@ -5,7 +5,7 @@ somewhere within the cipher:
 
 1. Determine the 26 unique code words using an algorithm that looks for repeated sequences of numbers in the ciphertext.
 2. Split the cipher into a list of code words.
-3. Note the following important property: If you know the plaintext for two identical words at different offsets in the cipher, then you can conclude that the cumulative rotation value between the first offset and the second offset must equal the difference between the ordinal values of the two plaintext characters (mod 26). This can be represented as a multivariable equation with the variables being the code words occurring between the two offsets, and the frequency of each code word corresponding to its variable coefficient.
+3. Note the following important property: If you know the plaintext characters for two identical code words at different offsets in the cipher, then you can conclude that the cumulative rotation value between the first offset and the second offset must equal the difference between the ordinal values of the two plaintext characters (mod 26). This can be represented as a multivariable equation with the variables being the code words occurring between the two offsets, and the frequency of each code word corresponding to its variable coefficient.
 4. For every possible position of the two plaintext strings within the cipher, run the following algorithm:
   * Find every such occurrence of identical words with known plaintext, construct the corresponding equation, and assemble all of the equations into a matrix.
   * Row-reduce the matrix using only integer operations. If the matrix is inconsistent (no solution), eliminate the current position of the plaintext strings from consideration.
