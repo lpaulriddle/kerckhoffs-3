@@ -22,15 +22,15 @@ count_dict = {}
 
 num_good = 0
 num_bad = 0
-print(f"numkeys xxx {len(cipher)}")
+print(f"Cipher length = {len(cipher)}")
 for i1 in range(0, len(cipher) - l1 + 1):
-    print(f"numkeys xxx {i1}")
+    print(f"trying plaintext1 at index {i1}")
     slice1 = cipher.known_plaintext_slice(plaintext1, i1)
     for i2 in range(0, len(cipher) - l2 + 1):
         if max(i1, i2) < min(i1+l1, i2+l2):
             continue
         slice2 = cipher.known_plaintext_slice(plaintext2, i2)
-        print(f"slice1 {i1}-{i1+l1} slice2 {i2}-{i2+l2}")
+        #print(f"slice1 {i1}-{i1+l1} slice2 {i2}-{i2+l2}")
         key_builder = cipher.get_key_builder(slice1, slice2)
         if key_builder != None:
             num_good += 1
@@ -49,5 +49,5 @@ for i1 in range(0, len(cipher) - l1 + 1):
             print(f"keystats:{key_builder_stats}")
         else:
             num_bad += 1
-print("slice1",count_dict)
+print("count_dict",count_dict)
 print(f"num_good {num_good} num_bad {num_bad}")

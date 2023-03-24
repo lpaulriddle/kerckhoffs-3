@@ -79,10 +79,14 @@ class KeyBuilder:
         return True
 
     def _next(self):
-        if not self.rotations:
+        seq = self._seq
+        self._seq += 1
+        if seq == 0:
 
-            # First time through - generate the initial rotation combo
-            self._generate()
+            #
+            # Don't need to do anything the first time through, as _generate() is called
+            # in the constructor
+            #
             return True
         pos = len(self._unique_words) - 1
         while (pos >= 0):
@@ -222,6 +226,7 @@ class KeyBuilder:
 
     def __init__(self, matrix, known_pt_slices, known_rotations_only=False):
         self._known_pt_slices = known_pt_slices
+        self._seq = 0
         matrix_rotations = matrix.get_rotations()
 
         #
@@ -264,6 +269,7 @@ class KeyBuilder:
 
         pos = 0
         self.rotations = {}
+        self._generate()
 
     def __iter__(self):
         return self
