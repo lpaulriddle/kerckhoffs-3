@@ -13,3 +13,5 @@ somewhere within the cipher:
   * Iterate through all possible solutions to the matrix (each solution corresponds to a set of key rotation values).
   * For each solution, try to generate a (possibly partial) key by fitting the known plaintext to each possible set of rotations. A successful fit will yield a key with no duplicate key characters.
   * For each successful fit, try to decrypt the cipher and look to see if any unknown portions of the cipher are decrypted correctly.
+
+In practice, with the Kerckhoffs (part 3) cipher, attempting to fit the plaintext strings "norththirtyninedegreestenpoint" and "westseventysixdegreesfiftyonepoint", yielded three matrices with 1 solution each, and one matrix with 676 (26^2) solutions. The latter matrix turned out to be the correct one, with the others being false positives. Of the 676 possible solutions, 104 (26*4) yielded valid keys, and decrypting produced enough text in between the two known strings that it was fairly easy to identify the correct key. The one rotation and 2 or 3 plaintext characters that the algorithm didn't identify were easy to deduce from the resulting decrypted plaintext.
