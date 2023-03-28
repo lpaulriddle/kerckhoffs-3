@@ -26,7 +26,6 @@ key_builder = cipher.get_key_builder(slice1, slice2)
 if key_builder != None:
     print(f"initial rotations {key_builder.rotations}")
     good_count = 0
-    bad_count = 0
     print("Stats:",key_builder.stats())
 
     for key in key_builder:
