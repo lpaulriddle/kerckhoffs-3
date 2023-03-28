@@ -120,6 +120,28 @@ class KeyBuilder:
         self.unused_key_chars = set(string.ascii_lowercase)
 
     def _fit_plaintext(self, known_plaintext_slice):
+        def _add_key_char(word, key_ch):
+
+            #
+            # Each letter can appear in the key only once. We could just pull
+            # plaintext_char_dict.values() here and do a linear search, but a separate dict
+            # seemed more efficent, and we can also display the previously mapped cipher word.
+            #
+            # Unlike rotation mismatches, this does occur a *lot* with a matching key and
+            # sufficiently long plaintext sample. For example, matching 32 characters of known
+            # plaintext against the beginning of the Kerckhoffs 2 cipher yielded a total of
+            # 456,976 possible keys (26^4), of which only 10,296 had no dups. I wonder if it
+            # would be possible to determine this mathematically somehow instead of iteratively.
+            #
+            if key_ch in self.used_key_char_dict:
+                log.debug(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
+                return False
+            self.used_key_char_dict[key_ch] = word
+            self.unused_key_chars.remove(key_ch)
+            self.plaintext_char_dict[word] = key_ch
+            log.debug(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
+            return True
+
         def _backfill(starting_index):
             r = running_rotation
             for i in range(starting_index, -1, -1):
@@ -127,18 +149,9 @@ class KeyBuilder:
                 log.debug(f"backfill for {word} at index {i}")
                 r += self.rotations[word]['rotation']
 
-                #
-                # Seems like we're repeating a bunch of code here...
-                #
                 key_ch = chr((ord(ch) + r - ord('a')) % 26 + ord('a'))
-                if key_ch in self.used_key_char_dict:
-                    log.debug(f"backfill failed for {word}: calculated key_ch {key_ch} already used")
+                if _add_key_char(word, key_ch) == False:
                     return False
-                assert(key_ch not in self.used_key_char_dict)
-                self.used_key_char_dict[key_ch] = word
-                self.unused_key_chars.remove(key_ch)
-                assert(word not in self.plaintext_char_dict)
-                self.plaintext_char_dict[word] = key_ch
             return True
 
         running_rotation = None
@@ -178,25 +191,8 @@ class KeyBuilder:
                 continue
             else:
                 key_ch = chr((ord(ch) + running_rotation - ord('a')) % 26 + ord('a'))
-
-                #
-                # Each letter can appear in the key only once. We could just pull
-                # plaintext_char_dict.values() here and do a linear search, but a separate dict
-                # seemed more efficent, and we can also display the previously mapped cipher word.
-                #
-                # Unlike rotation mismatches, this does occur a *lot* with a matching key and
-                # sufficiently long plaintext sample. For example, matching 32 characters of known
-                # plaintext against the beginning of the Kerckhoffs 2 cipher yielded a total of
-                # 456,976 possible keys (26^4), of which only 10,296 had no dups. I wonder if it
-                # would be possible to determine this mathematically somehow instead of iteratively.
-                #
-                if key_ch in self.used_key_char_dict:
-                    log.debug(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
+                if _add_key_char(word, key_ch) == False:
                     return False
-                self.used_key_char_dict[key_ch] = word
-                self.unused_key_chars.remove(key_ch)
-                self.plaintext_char_dict[word] = key_ch
-                log.debug(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
 
             if rot_val == None:
                 # unknown rotation - can't continue
