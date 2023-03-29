@@ -57,22 +57,20 @@ class KeyBuilder:
         pos = len(self.rotations)
         starting_pos = pos
 
-        while pos < len(self.unique_words):
-            val = self.unique_words[pos]
+        while pos < len(self._unique_words):
+            val = self._unique_words[pos]
             assert(val not in self.rotations)
-            self.rotations[val] = {}
             rotation = None
             if val in self.known_rotations:
                 rotation = self.known_rotations[val]
-                self.rotations[val]['type'] = self.ROTATION_KNOWN
+                self.rotations[val] = { 'type': self.ROTATION_KNOWN }
             elif val in self.unknown_rotations:
                 rotation = self._calculate_rotation(val, self.unknown_rotations[val])
                 if rotation == None:
                     rotation = 0
-                    self.rotations[val]['type'] = self.ROTATION_GUESSED
+                    self.rotations[val] = { 'type': self.ROTATION_GUESSED }
                 else:
-                    self.rotations[val]['type'] = self.ROTATION_CALCULATED
-                    
+                    self.rotations[val] = { 'type': self.ROTATION_CALCULATED }
             else:
                 raise KeyBuilderException(f"Word {val} not present in either known_rotations or unknown_rotations")
             self.rotations[val]['rotation'] = rotation
@@ -81,10 +79,18 @@ class KeyBuilder:
         return True
 
     def _next(self):
-        self._reset()
-        pos = len(self.unique_words) - 1
+        seq = self._seq
+        self._seq += 1
+        if seq == 0:
+
+            #
+            # Don't need to do anything the first time through, as _generate() is called
+            # in the constructor
+            #
+            return True
+        pos = len(self._unique_words) - 1
         while (pos >= 0):
-            word = self.unique_words[pos]
+            word = self._unique_words[pos]
             rotation = self.rotations[word]
             if (rotation['type'] == self.ROTATION_GUESSED):
                 rot_val = rotation['rotation'] + 1
@@ -114,6 +120,28 @@ class KeyBuilder:
         self.unused_key_chars = set(string.ascii_lowercase)
 
     def _fit_plaintext(self, known_plaintext_slice):
+        def _add_key_char(word, key_ch):
+
+            #
+            # Each letter can appear in the key only once. We could just pull
+            # plaintext_char_dict.values() here and do a linear search, but a separate dict
+            # seemed more efficent, and we can also display the previously mapped cipher word.
+            #
+            # Unlike rotation mismatches, this does occur a *lot* with a matching key and
+            # sufficiently long plaintext sample. For example, matching 32 characters of known
+            # plaintext against the beginning of the Kerckhoffs 2 cipher yielded a total of
+            # 456,976 possible keys (26^4), of which only 10,296 had no dups. I wonder if it
+            # would be possible to determine this mathematically somehow instead of iteratively.
+            #
+            if key_ch in self.used_key_char_dict:
+                log.debug(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
+                return False
+            self.used_key_char_dict[key_ch] = word
+            self.unused_key_chars.remove(key_ch)
+            self.plaintext_char_dict[word] = key_ch
+            log.debug(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
+            return True
+
         def _backfill(starting_index):
             r = running_rotation
             for i in range(starting_index, -1, -1):
@@ -121,18 +149,9 @@ class KeyBuilder:
                 log.debug(f"backfill for {word} at index {i}")
                 r += self.rotations[word]['rotation']
 
-                #
-                # Seems like we're repeating a bunch of code here...
-                #
                 key_ch = chr((ord(ch) + r - ord('a')) % 26 + ord('a'))
-                if key_ch in self.used_key_char_dict:
-                    log.debug(f"backfill failed for {word}: calculated key_ch {key_ch} already used")
+                if _add_key_char(word, key_ch) == False:
                     return False
-                assert(key_ch not in self.used_key_char_dict)
-                self.used_key_char_dict[key_ch] = word
-                self.unused_key_chars.remove(key_ch)
-                assert(word not in self.plaintext_char_dict)
-                self.plaintext_char_dict[word] = key_ch
             return True
 
         running_rotation = None
@@ -172,25 +191,8 @@ class KeyBuilder:
                 continue
             else:
                 key_ch = chr((ord(ch) + running_rotation - ord('a')) % 26 + ord('a'))
-
-                #
-                # Each letter can appear in the key only once. We could just pull
-                # plaintext_char_dict.values() here and do a linear search, but a separate dict
-                # seemed more efficent, and we can also display the previously mapped cipher word.
-                #
-                # Unlike rotation mismatches, this does occur a *lot* with a matching key and
-                # sufficiently long plaintext sample. For example, matching 32 characters of known
-                # plaintext against the beginning of the Kerckhoffs 2 cipher yielded a total of
-                # 456,976 possible keys (26^4), of which only 10,296 had no dups. I wonder if it
-                # would be possible to determine this mathematically somehow instead of iteratively.
-                #
-                if key_ch in self.used_key_char_dict:
-                    log.debug(f"Duplicate key_char: '{key_ch}' already mapped to word '{self.used_key_char_dict[key_ch]}'")
+                if _add_key_char(word, key_ch) == False:
                     return False
-                self.used_key_char_dict[key_ch] = word
-                self.unused_key_chars.remove(key_ch)
-                self.plaintext_char_dict[word] = key_ch
-                log.debug(f"Added {word} = {key_ch} (rot {rot_val} running_rot {running_rotation})")
 
             if rot_val == None:
                 # unknown rotation - can't continue
@@ -204,9 +206,9 @@ class KeyBuilder:
     def _key(self):
         unused_key_chars = list(self.unused_key_chars)
         unused_key_chars.sort()
-        #return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
-        # Just use stuff we can directly calculate. Seems to be sufficient to decrypt #3
-        return Key(self.plaintext_char_dict, self.known_rotations, unused_key_chars)
+        if self.known_rotations_only == True:
+            return Key(self.plaintext_char_dict, self.known_rotations, unused_key_chars)
+        return Key(self.plaintext_char_dict, dict([(a,b['rotation']) for (a,b) in self.rotations.items()]), unused_key_chars)
 
     def stats(self):
         num_rotations = len(self.rotations)
@@ -218,17 +220,30 @@ class KeyBuilder:
                 'num_guessed_rotations': num_guessed_rotations,
                 'num_possible_keys': num_possible_keys}
 
-    def __init__(self, matrix_rotations, known_pt_slices):
+    def __init__(self, matrix, known_pt_slices, known_rotations_only=False):
         self._known_pt_slices = known_pt_slices
+        self._seq = 0
+        matrix_rotations = matrix.get_rotations()
 
         #
-        # We need to get the list of words in the order they appear in the matrix
-        # This gets sorted in the reduction code, so just need to return that somehow to avoid doing
-        # it again here
+        # Indicates whether generated keys should include known rotations only, or include unknown/guessed rotations
+        # Usually, we want the latter, but the former might be useful in some cases
         #
-        self.unique_words = list(matrix_rotations.keys())
-        self.unique_words.sort(reverse = True)
-        log.debug(f"unique_words: {self.unique_words}")
+        self.known_rotations_only = known_rotations_only
+
+        #
+        # Note- the code doesn't currently handle words that are not in the rotation matrix, e.g., words that occur
+        # zero or one times in the plaintext sample(s). Since these words have no dependencies in the matrix, their
+        # rotation values are not bound, and therefore, each one will increase the number of possible keys by a
+        # factor of 26. It shouldn't be too difficult to make the code support these, but it should probably be
+        # optional.
+        #
+        # The upshot of this lack of support is that we can't just set self._unique_words to matrix.unique_words -
+        # We need to use only the words that are in the matrix.
+        #
+        self._unique_words = list(matrix_rotations.keys())
+        self._unique_words.sort(reverse = True)
+        log.debug(f"unique_words: {self._unique_words}")
 
         #
         # Pull out keys we know for sure ahead of time
@@ -237,31 +252,27 @@ class KeyBuilder:
         #
         single_row_vars = dict([(a,b[0]) for (a,b) in matrix_rotations.items() if len(matrix_rotations[a]) == 1])
         self.known_rotations = dict([(a,b[1]) for (a,b) in single_row_vars.items() if len(single_row_vars[a][0]) == 1])
-        log.debug(f"known_rotations: {self.known_rotations}")
+        log.debug(f"{len(self.known_rotations)} known_rotations: {self.known_rotations}")
 
         #
         # Now, pull out all the unknowns, which basically means "anything not in known_rotations"
         # This includes unknown rotations that appear in one or more rows of the matrix
         #
         self.unknown_rotations = dict([(a,b) for (a,b) in matrix_rotations.items() if a not in self.known_rotations])
-        log.debug(f"unknown_rotations: {self.unknown_rotations}")
+        log.debug(f"{len(self.unknown_rotations)} unknown_rotations: {self.unknown_rotations}")
 
         assert(len(self.known_rotations) + len(self.unknown_rotations)) == len(matrix_rotations)
 
         pos = 0
         self.rotations = {}
         self._generate()
-        self._reset()
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if len(self.unique_words) == 0:
-            raise StopIteration
-        while not (all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices)):
-            if self._next() == False:
-                raise StopIteration
-        key = self._key()
-        self._next()
-        return key
+        while self._next() == True:
+            self._reset()
+            if all (self._fit_plaintext(slice) == True for slice in self._known_pt_slices):
+                return self._key()
+        raise StopIteration
