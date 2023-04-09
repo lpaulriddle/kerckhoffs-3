@@ -150,8 +150,8 @@ class RotationMatrix:
                     # elegant or "Pythonic" code, but gets the job done fairly straightforwardly.
                     #
                     # Note that with a "regular" matrix, a row of all zeroes except the RHS means the
-                    # matrix is indeterminant (no solution). However, in this case, since we're
-                    # dealing with rotations, any RHS that equals 0 (mod 26) is acceptable.
+                    # matrix is inconsistent (no solution). However, in this case, since we're dealing
+                    # with rotations, any RHS that equals 0 (mod 26) is acceptable.
                     #
                     all_zeroes = True
                     negate = False
